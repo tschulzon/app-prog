@@ -112,7 +112,7 @@ class MyApp extends StatelessWidget {
             useMaterial3: true,
             colorScheme: ColorScheme.fromSeed(
                 seedColor: const Color.fromARGB(255, 126, 11, 137))),
-        home: MyHomePage(), //Home Widget wird erstellt
+        home: MainPage(), //Home Widget wird erstellt
       ),
     );
   }
@@ -168,6 +168,254 @@ class MyAppState extends ChangeNotifier {
   void setLanguage(String langCode) {
     selectedLanguage = langCode;
     notifyListeners();
+  }
+}
+
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  int _currentPageIndex = 0;
+  String searchQuery = "";
+
+  final List<Widget> _pages = [
+    const DocumentsView(),
+    const CommutePage(),
+    Center(child: Text("Galerie Page")),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(
+          colorSchemeSeed: const Color(0xff6750a4), useMaterial3: true),
+      home: Scaffold(
+        appBar: AppBar(title: const Text('Gescannte Elemente')),
+        body: SingleChildScrollView(
+          child: _pages[_currentPageIndex],
+        ),
+        bottomNavigationBar: CustomNavigationBar(
+            currentPageIndex: _currentPageIndex,
+            onDestinationSelected: (index) {
+              setState(() {
+                _currentPageIndex = index;
+              });
+            }),
+      ),
+    );
+  }
+}
+
+//Nur BeispielSeite für Test zum Switchen
+class CommutePage extends StatelessWidget {
+  const CommutePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text(
+        'Commute Page',
+        style: TextStyle(fontSize: 24),
+      ),
+    );
+  }
+}
+
+class DocumentsView extends StatelessWidget {
+  const DocumentsView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: <Widget>[
+            Row(
+              children: [
+                Expanded(
+                    child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SearchBar(
+                    onChanged: (String value) {
+                      print("Suchabfrage: $value");
+                    },
+                    leading: const Icon(Icons.search),
+                    hintText: "Dateiname suchen",
+                    trailing: <Widget>[
+                      IconButton(
+                        onPressed: () {
+                          print("Button wurde gedrückt");
+                          _showFilterDialog(context);
+                        },
+                        icon: const Icon(Icons.filter_alt),
+                      ),
+                    ],
+                  ),
+                )),
+              ],
+            ),
+            const Card(
+              child: SizedBox(
+                height: 100,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: SizedBox(
+                        width: 70,
+                        height: 100,
+                        child: Placeholder(),
+                      ),
+                    ),
+                    Expanded(
+                        child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Dateiname"),
+                          SizedBox(
+                            height: 30,
+                          ),
+                          Text("Datum und Uhrzeit lol")
+                        ],
+                      ),
+                    ))
+                  ],
+                ),
+              ),
+            ),
+            const Divider(),
+            const Card(
+              child: SizedBox(
+                height: 100,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: SizedBox(
+                        width: 70,
+                        height: 100,
+                        child: Placeholder(),
+                      ),
+                    ),
+                    Expanded(
+                        child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Dateiname"),
+                          SizedBox(
+                            height: 30,
+                          ),
+                          Text("Datum und Uhrzeit lol")
+                        ],
+                      ),
+                    ))
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void _showFilterDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        insetAnimationCurve: Curves.easeInOut,
+        child: Container(
+          width: double.infinity,
+          height: 500,
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // Dein Filter-Inhalt hier, z.B. Textfelder oder Checkboxen
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text("Filter-Optionen", style: TextStyle(fontSize: 16)),
+              ),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    const Text("Scan-Datum: "),
+                    const SizedBox(height: 10),
+                    InputDatePickerFormField(
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                      initialDate: DateTime.now(),
+                      onDateSubmitted: (date) {
+                        // Hier könntest du den Filter anwenden, wenn ein Datum ausgewählt wurde
+                        print("Datum ausgewählt: $date");
+                      },
+                      onDateSaved: (date) {
+                        print("Datum gespeichert: $date");
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              // Weitere Widgets für den Filter, z.B. Textfelder oder Dropdowns
+              ElevatedButton(
+                onPressed: () {
+                  // Hier kannst du die Logik für den Filter anwenden und den Dialog schließen
+                  Navigator.of(context).pop(); // Dialog schließen
+                },
+                child: const Text("Anwenden"),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class CustomNavigationBar extends StatelessWidget {
+  final int currentPageIndex;
+  final ValueChanged<int> onDestinationSelected;
+
+  const CustomNavigationBar({
+    super.key,
+    required this.currentPageIndex,
+    required this.onDestinationSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationBar(
+      selectedIndex: currentPageIndex,
+      onDestinationSelected: onDestinationSelected,
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.explore),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.camera),
+          label: 'Kamera',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.perm_media),
+          label: 'Galerie',
+        ),
+      ],
+    );
   }
 }
 
