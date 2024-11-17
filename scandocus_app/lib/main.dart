@@ -1,22 +1,103 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:english_words/english_words.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
 import 'dart:io';
-import 'package:flutter/services.dart'; // Für rootBundle
-//import 'package:path_provider/path_provider.dart'; // Für temporäre Verzeichnisse
-// import 'package:image_picker/image_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 // Aktuell wird hier Flutter nur angewiesen, die in MyApp() definierte App auszuführen.
 void main() {
   runApp(MyApp());
 }
 
-// Die Klasse MyApp erweitert StatelessWidget. Widgets sind Elemente, aus denen man jede Flutter-App erstellt.
-// Die App selbst ist sogar ein Widget.
-// Mit dem Code in MyApp wird die gesamte App eingerichtet. Damit wird der App-weite Status erstellt, der App einen Namen gegeben, das visuelle
-// Design und das "Home"-Widget erstellt, also den Startpunkt der App.
+class LangOptions {
+  final String code;
+  final String englishName;
+  final String nativeName;
+
+  LangOptions(
+      {required this.code,
+      required this.englishName,
+      required this.nativeName});
+
+  factory LangOptions.fromJson(Map<String, dynamic> json) {
+    return LangOptions(
+        code: json['code'],
+        englishName: json['englishName'],
+        nativeName: json['nativeName']);
+  }
+}
+
+// Funktion, um die JSON-Datei zu laden und zu parsen
+Future<List<LangOptions>> loadData() async {
+  // Lade die JSON-Datei aus den Assets
+  final String response = await rootBundle.loadString('assets/languages.json');
+
+  // Die JSON-Daten dekodieren
+  final Map<String, dynamic> data =
+      json.decode(response); // Hier erwarten wir ein einzelnes Objekt
+
+  // Extrahiere die Liste der Sprachen
+  final List<dynamic> languagesData =
+      data['languages']; // 'languages' ist der Schlüssel in deinem JSON-Objekt
+
+  // Konvertiere die Liste von Maps in eine Liste von Language-Objekten
+  return languagesData
+      .map((e) => LangOptions.fromJson(e as Map<String, dynamic>))
+      .toList();
+}
+
+// Funktion, um die Sprachdatei herunterzuladen
+Future<void> addLanguage(String langCode) async {
+  try {
+    print("in AddLanguage");
+    HttpClient httpClient = HttpClient();
+    HttpClientRequest request = await httpClient.getUrl(Uri.parse(
+        'https://github.com/tesseract-ocr/tessdata/raw/main/${langCode}.traineddata'));
+    HttpClientResponse response = await request.close();
+    Uint8List bytes = await consolidateHttpClientResponseBytes(response);
+
+    String dir = await FlutterTesseractOcr.getTessdataPath();
+    File file = File('$dir/${langCode}.traineddata');
+
+    // Die heruntergeladene Sprachdatei speichern
+    await file.writeAsBytes(bytes);
+
+    // Bestätigung
+    print('$langCode wurde erfolgreich heruntergeladen und gespeichert!');
+  } catch (e) {
+    print('Fehler beim Hinzufügen der Sprache: $e');
+  }
+}
+
+//Show downloaded Languages
+Future<List<String>> getDownloadedLanguages() async {
+  String tessdataPath = await FlutterTesseractOcr.getTessdataPath();
+  Directory tessdataDir = Directory(tessdataPath);
+
+  if (!tessdataDir.existsSync()) {
+    return [];
+  }
+
+  // Liste aller Dateien im Verzeichnis
+  List<FileSystemEntity> files = tessdataDir.listSync();
+
+  // Filtern der Dateien, die auf ".traineddata" enden
+  return files
+      .whereType<File>()
+      .where((file) => file.path.endsWith('.traineddata'))
+      .map((file) => file.uri.pathSegments.last
+          .split('.')
+          .first) // Name ohne ".traineddata"
+      .toList();
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -37,19 +118,12 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Die Klasse MyAppState definiert den Status der App mithilfe von ChangeNotifier
-// - es definiert die Daten, die die App benötigt (Aktuell ein Zufallswortpaar)
-// - Statusklasse erweitert ChangeNotifier, was bedeutet, dass sie andere über ihre eigenen Änderungen benachrichtigen kann
-// z.B. wenn sich das aktuelle Wortpaar ändert, müssen einige Widgets in der App darüber informiert werden
-// - Status wird erstellt und mithilfe eines ChangeNotifierProvider für die gesamte Anwendung bereitgestellt (siehe oben in MyApp)
-// Dadurch kann jedes Widget in der App den Status abrufen.
 class MyAppState extends ChangeNotifier {
-  var current =
-      WordPair.random(); //erstellt ein Zufallswortpaar als Variable bzw. Status
-
   var showText = "Hier wird Text angezeigt";
 
   File? selectedImage; // Ausgewähltes Bild als Datei
+
+  String selectedLanguage = "eng";
 
   // Methode zum Auswählen eines Bildes
   Future<void> pickImage() async {
@@ -79,7 +153,7 @@ class MyAppState extends ChangeNotifier {
       print("OCR wird ausgeführt...");
       String extractedText = await FlutterTesseractOcr.extractText(
         selectedImage!.path, // Pfad zum ausgewählten Bild
-        language: 'eng',
+        language: selectedLanguage,
       );
 
       // Aktualisiere den Status
@@ -90,225 +164,178 @@ class MyAppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // diese Methode weist current mit einer neuen zufälligen WordPair neu zu und dazu wird notifyListeners() aufgerufen
-  // notfiylisteners sorgt dafür, dass alle Zuschauer von MyAppState benachrichtigt werden
-  void getNext() {
-    current = WordPair.random();
-    notifyListeners();
-  }
-
-  // Wir haben der MyAppState eine neue Property namens "favorites" hinzugefügt,
-  // Dieses Attribut wird mit einer leeren Liste initialisiert: []
-  // Mit <WordPair>[] (generics) haben wir angegeben, dass die Liste nur Wortpaare enthalten darf.
-
-  var favorites = <WordPair>[];
-
-  void toggleFavorite() {
-    if (favorites.contains(current)) {
-      favorites.remove(current);
-    } else {
-      favorites.add(current);
-    }
-    print("WordPairs: $favorites");
+  //get the chosen language
+  void setLanguage(String langCode) {
+    selectedLanguage = langCode;
     notifyListeners();
   }
 }
 
 class MyHomePage extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  MyHomePageState createState() => MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  var selectedIndex = 0;
+class MyHomePageState extends State<MyHomePage> {
+  // Die Liste der Optionen
+  late Future<List<LangOptions>> options;
+  // Der aktuell ausgewählte Wert
+  LangOptions? selectedOption;
+  List<String> downloadedLanguages = [];
+  String message = ""; //nachricht für Status Download
 
   @override
-  Widget build(BuildContext context) {
-    Widget page;
+  void initState() {
+    super.initState();
+    // Lade die Daten
+    options = loadData();
+    loadDownloadedLanguages();
+  }
 
-    switch (selectedIndex) {
-      case 0:
-        page = GeneratorPage();
-        break;
-      case 1:
-        page = FavoritesPages();
-        break;
-      default:
-        throw UnimplementedError('no widget for $selectedIndex');
-    }
-
-    return LayoutBuilder(builder: (context, constraints) {
-      return Scaffold(
-        body: Row(
-          children: [
-            SafeArea(
-              child: NavigationRail(
-                extended: constraints.maxWidth >= 600,
-                destinations: [
-                  NavigationRailDestination(
-                    icon: Icon(Icons.home),
-                    label: Text('Home'),
-                  ),
-                  NavigationRailDestination(
-                      icon: Icon(Icons.favorite), label: Text('Favorites')),
-                ],
-                selectedIndex: selectedIndex,
-                onDestinationSelected: (value) {
-                  setState(() {
-                    selectedIndex = value;
-                  });
-                },
-              ),
-            ),
-            Expanded(
-              child: Container(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: page,
-              ),
-            ),
-          ],
-        ),
-      );
+  //load downloaded languages
+  Future<void> loadDownloadedLanguages() async {
+    List<String> downloaded = await getDownloadedLanguages();
+    setState(() {
+      downloadedLanguages = downloaded;
     });
   }
-}
 
-class GeneratorPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
-    var pair = appState.current;
-
-    IconData icon;
-    if (appState.favorites.contains(pair)) {
-      icon = Icons.favorite;
-    } else {
-      icon = Icons.favorite_border;
+  //Download the Language
+  void downloadLanguage() {
+    if (selectedOption != null) {
+      addLanguage(selectedOption!.code).then((_) {
+        setState(() {
+          message =
+              "${selectedOption!.englishName} wurde erfolgreich heruntergeladen.";
+        });
+      }).catchError((error) {
+        setState(() {
+          message = "Fehler: $error";
+        });
+      });
     }
-
-    return Center(
-        child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        BigCard(pair: pair),
-        SizedBox(height: 10),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ElevatedButton(
-              onPressed: () async {
-                print('button 1 funktioniert');
-                appState.getNext();
-              },
-              child: Text('Next Word'),
-            ),
-            SizedBox(width: 10),
-            ElevatedButton.icon(
-              onPressed: () async {
-                print('button 1 funktioniert');
-                appState.toggleFavorite();
-              },
-              icon: Icon(icon),
-              label: Text('Like'),
-            ),
-          ],
-        ),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () async {
-                print('button 1 funktioniert');
-                await appState.pickImage();
-              },
-              child: Text('Bild auswählen'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                print('button 2 funktioniert');
-                await appState.performOCR();
-              },
-              child: Text('OCR ausführen'),
-            ),
-            Text(
-              appState.showText,
-              textAlign: TextAlign.center,
-            )
-          ],
-        ),
-      ],
-    ));
   }
-}
 
-class FavoritesPages extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
 
-    if (appState.favorites.isEmpty) {
-      return Center(child: Text("No favorites yet."));
-    }
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Dropdown mit Sprachdaten",
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: FutureBuilder<List<LangOptions>>(
+            future: options,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+                return Text("Fehler: ${snapshot.error}");
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Text("Keine Optionen verfügbar.");
+              } else {
+                // Wenn die Daten erfolgreich geladen wurden
+                List<LangOptions> data = snapshot.data!;
 
-    var favoriteList = appState.favorites;
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Flexible(
+                          flex: 2,
+                          child: DropdownButton<LangOptions>(
+                            value: selectedOption,
+                            hint: Text('Wähle eine Option'),
+                            isExpanded: true,
+                            onChanged: (LangOptions? newValue) {
+                              setState(() {
+                                selectedOption = newValue;
+                              });
 
-    return ListView(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Text("You have ${appState.favorites.length} favorites: "),
-        ),
-        for (var favorite in favoriteList)
-          // Text(favorite.asPascalCase, style: TextStyle(fontSize: 18)),
-          ListTile(
-            leading: Icon(Icons.favorite),
-            title: Text(favorite.asLowerCase),
+                              //set Language in AppState
+                              if (newValue != null) {
+                                appState.setLanguage(newValue.code);
+                              }
+                            },
+                            items: (() {
+                              List<LangOptions> sortedData = data.toList();
+                              sortedData.sort((a, b) {
+                                bool isADownloaded =
+                                    downloadedLanguages.contains(a.code);
+                                bool isBDownloaded =
+                                    downloadedLanguages.contains(b.code);
+
+                                //Manuelles Sortieren: true(heruntergeladen) kommt zuerst
+                                if (isBDownloaded && !isADownloaded) return 1;
+                                if (isADownloaded && !isBDownloaded) return -1;
+                                return 0;
+                              });
+                              //Convert in DropDownMenuItem
+                              return sortedData.map((LangOptions option) {
+                                bool isDownloaded =
+                                    downloadedLanguages.contains(option.code);
+
+                                return DropdownMenuItem<LangOptions>(
+                                  value: option,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(option.englishName),
+                                      if (isDownloaded)
+                                        Icon(Icons.check, color: Colors.green),
+                                    ],
+                                  ),
+                                );
+                              }).toList();
+                            })(),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: downloadLanguage,
+                          child: Icon(Icons.download),
+                        ),
+                      ],
+                    ),
+
+                    //Show message after Download
+                    if (message.isNotEmpty)
+                      Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(message)),
+                    ElevatedButton(
+                        onPressed: appState.pickImage,
+                        child: Text("Bild aus Galerie wählen")),
+                    if (appState.selectedImage != null)
+                      Image.file(
+                        appState.selectedImage!,
+                      ),
+                    ElevatedButton(
+                      onPressed: appState.performOCR,
+                      child: Text("OCR ausführen"),
+                    ),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          appState.showText,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
           ),
-      ],
-    );
-  }
-}
-
-class BigCard extends StatelessWidget {
-  const BigCard({
-    super.key,
-    required this.pair,
-  });
-
-  final WordPair pair;
-
-  @override
-  Widget build(BuildContext context) {
-    // aktuelles Design der App mit Theme.of(context) anfordern
-    final theme = Theme.of(context);
-
-    // mit "textTheme" greift man auf das Schriftdesign der App zu, z.B. bodyMedium (Standardtext mittlerer Größe)
-    // caption (für Bilduntertitel) oder headlineLarge (für große Anzeigentitel)
-
-    // displayMedium ist ein großer Stil, der für Anzeigetext vorgesehen ist.
-    // Siehe Doku: displayMedium ist für "Darstellungsstile für kurzen, wichtigen Text"
-    // displayMedium! heißt ist sicher nicht null.
-    // mit copyWith für displayMedium wird eine Kopie des Textstils mit den von ihnen definierten Änderungen zurückgegeben,
-    // In diesem Fall ändertn wir wir nur die Textfarbe
-    final style = theme.textTheme.displaySmall!.copyWith(
-      // um die neue Farbe zu erhalten, muss man wieder auf das Design der APp zugreifen, die Eigenschaft "onPrimary" des Farbeschemas
-      // definiert eine Farbe, die sich gut zur Verwendung der Hauptfarbe der App eignet.
-      color: theme.colorScheme.onPrimary,
-      fontWeight: FontWeight.bold,
-    );
-
-    return Card(
-      // der Code definiert die Farbe der Karte so, dass sie der Farbe der colorScheme-Eigenschaft des Designs entspricht.
-      // Das Farbschema enthält viele Farben, primary ist die markanteste und prägendste Farbe der App
-      color: theme.colorScheme.secondary,
-      elevation: 5.0,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Text(
-          pair.asLowerCase,
-          style: style,
-          semanticsLabel: "${pair.first} ${pair.second}",
         ),
       ),
     );
