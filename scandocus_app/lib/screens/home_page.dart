@@ -10,19 +10,25 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:camera/camera.dart';
 
 import '../widgets/documents_view.dart';
 import '../widgets/custom_navigation_bar.dart';
 import '../screens/ocr_page.dart';
+import '../screens/camera_page.dart';
+import '../main.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final List<CameraDescription> cameras;
+
+  const HomePage({super.key, required this.cameras});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  late CameraDescription selectedCamera;
   int _currentPageIndex = 0;
   String searchQuery = "";
 
@@ -30,6 +36,15 @@ class _HomePageState extends State<HomePage> {
 
   File? selectedImage; // Ausgewähltes Bild als Datei
   final ImagePicker picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.cameras.isNotEmpty) {
+      selectedCamera =
+          widget.cameras.first; // Wähle die erste Kamera als Standard
+    }
+  }
 
   // Methode zum Auswählen eines Bildes
   Future<void> pickImage() async {
@@ -51,22 +66,21 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  final List<Widget> _pages = [
-    const DocumentsView(),
-    //OcrPage(),
-    Center(child: Text("Kamera Page")),
-    Center(child: Text("Galerie Page")),
-  ];
-
   // Navigiere zum OCR-Prozess-Bildschirm und übergebe das Bild
   void navigateToOCRScreen() {
     if (selectedImage != null) {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OcrProcessView(selectedImage: selectedImage),
+          builder: (context) => OcrProcessView(
+              selectedImage: selectedImage, cameras: widget.cameras),
         ),
-      );
+      ).then((value) {
+        // Wenn zurückgekehrt wird (z. B. nach OCR oder der Kamera), setzen wir den Index auf 0 zurück
+        setState(() {
+          _currentPageIndex = 0;
+        });
+      });
     } else {
       // Optional: Nachricht anzeigen, wenn kein Bild ausgewählt wurde
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,9 +95,7 @@ class _HomePageState extends State<HomePage> {
       home: Scaffold(
         appBar: AppBar(title: const Text('Gescannte Elemente')),
         body: SingleChildScrollView(
-          child: _currentPageIndex == 2 && selectedImage != null
-              ? Image.file(selectedImage!) // Zeigt das Bild an
-              : _pages[_currentPageIndex], // Zeigt die andere Seite an
+          child: DocumentsView(), // Zeigt die andere Seite an
         ),
         bottomNavigationBar: CustomNavigationBar(
           currentPageIndex: _currentPageIndex,
@@ -93,6 +105,21 @@ class _HomePageState extends State<HomePage> {
               // Wenn auf die Galerie geklickt wird, öffne den ImagePicker
               if (_currentPageIndex == 2) {
                 pickImage(); // Öffnet den ImagePicker
+              } else if (_currentPageIndex == 1) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TakePictureScreen(
+                      camera: selectedCamera,
+                      cameras: widget.cameras,
+                    ),
+                  ),
+                ).then((value) {
+                  // Wenn zurückgekehrt wird (z. B. nach OCR oder der Kamera), setzen wir den Index auf 0 zurück
+                  setState(() {
+                    _currentPageIndex = 0;
+                  });
+                });
               }
             });
           },

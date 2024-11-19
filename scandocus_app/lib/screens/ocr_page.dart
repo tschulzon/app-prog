@@ -7,12 +7,15 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
+import 'package:scandocus_app/main.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:camera/camera.dart';
 
 import '../models/lang_options.dart';
 import '../widgets/language_list.dart';
+import 'home_page.dart';
 
 // class OcrPage extends StatefulWidget {
 //   const OcrPage({super.key});
@@ -184,9 +187,16 @@ import '../widgets/language_list.dart';
 // }
 
 class OcrProcessView extends StatefulWidget {
-  final File? selectedImage; // Ausgewähltes Bild als Datei
+  final List<CameraDescription> cameras;
 
-  const OcrProcessView({super.key, this.selectedImage});
+  final File? selectedImage; // Ausgewähltes Bild als Datei
+  final String? takenPicture;
+
+  const OcrProcessView(
+      {super.key,
+      this.selectedImage,
+      required this.cameras,
+      this.takenPicture});
 
   @override
   State<OcrProcessView> createState() => _OcrProcessViewState();
@@ -194,6 +204,7 @@ class OcrProcessView extends StatefulWidget {
 
 class _OcrProcessViewState extends State<OcrProcessView> {
   late File? selectedImage; // Ausgewähltes Bild als Datei
+  late String? takenPicture;
   var showText = "Hier wird Text angezeigt";
   String selectedLanguage = "eng";
 
@@ -202,6 +213,8 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     super.initState();
     selectedImage =
         widget.selectedImage; // Das Bild aus dem Widget-Parameter setzen
+
+    takenPicture = widget.takenPicture;
   }
 
   void _showLanguageDialog(BuildContext context) {
@@ -223,10 +236,27 @@ class _OcrProcessViewState extends State<OcrProcessView> {
 
   // Methode für die OCR-Erkennung
   Future<void> performOCR() async {
+    String? imagePath;
+
+    // Überprüfen, ob `selectedImage` oder `takenPicture` nicht null sind
+    if (selectedImage != null) {
+      imagePath = selectedImage!
+          .path; // Wenn `selectedImage` nicht null ist, verwenden wir diesen Pfad
+    } else if (takenPicture != null) {
+      imagePath =
+          takenPicture!; // Wenn `takenPicture` nicht null ist, verwenden wir diesen Pfad
+    } else {
+      print("Kein Bild zum Extrahieren vorhanden!");
+      setState(() {
+        showText = "Kein Bild zum Extrahieren vorhanden!";
+      });
+      return; // Beenden, wenn kein Bild vorhanden ist
+    }
+
     try {
       print("OCR wird ausgeführt...");
       String extractedText = await FlutterTesseractOcr.extractText(
-        selectedImage!.path, // Pfad zum ausgewählten Bild
+        imagePath, // Pfad zum ausgewählten Bild
         language: selectedLanguage,
       );
 
@@ -251,10 +281,13 @@ class _OcrProcessViewState extends State<OcrProcessView> {
           child: Center(
             child: Column(
               children: [
-                selectedImage != null
+                selectedImage != null && takenPicture == null
                     ? Image.file(
                         selectedImage!) // Das ausgewählte Bild anzeigen
-                    : Text("Kein Bild ausgewählt!"),
+                    : (selectedImage == null && takenPicture != null
+                        ? Image.file(File(
+                            takenPicture!)) // Das aufgenommene Bild anzeigen
+                        : Text("Kein Bild ausgewählt!")),
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Row(
@@ -285,6 +318,19 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                       textAlign: TextAlign.center,
                     ),
                   ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomePage(cameras: widget.cameras),
+                      ),
+                    );
+                    print("Speichernbutton gedrückt");
+                  },
+                  icon: const Icon(Icons.save),
+                  label: Text("Speichern"),
                 ),
               ],
             ),

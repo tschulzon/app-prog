@@ -10,17 +10,27 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:camera/camera.dart';
 
 import 'screens/home_page.dart';
 import 'widgets/custom_navigation_bar.dart';
 
-// Aktuell wird hier Flutter nur angewiesen, die in MyApp() definierte App auszuführen.
-void main() {
-  runApp(MyApp());
+Future<void> main() async {
+  // Ensure that plugin services are initialized so that `availableCameras()`
+  // can be called before `runApp()`
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Obtain a list of the available cameras on the device.
+  final cameras = await availableCameras();
+
+  // Start der App
+  runApp(MyApp(cameras: cameras));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final List<CameraDescription> cameras;
+
+  const MyApp({super.key, required this.cameras});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -36,7 +46,7 @@ class _MyAppState extends State<MyApp> {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 126, 11, 137))),
-      home: HomePage(), //Home Widget wird erstellt
+      home: HomePage(cameras: widget.cameras), //Home Widget wird erstellt
     );
   }
 }
