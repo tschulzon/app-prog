@@ -1,15 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:english_words/english_words.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 class DocumentsView extends StatefulWidget {
   const DocumentsView({super.key});
@@ -152,7 +142,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                 child: Row(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: EdgeInsets.all(10.0),
                       child: SizedBox(
                         width: 70,
                         height: 100,
@@ -161,7 +151,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                     ),
                     Expanded(
                         child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +175,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                 child: Row(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: EdgeInsets.all(10.0),
                       child: SizedBox(
                         width: 70,
                         height: 100,
@@ -194,7 +184,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                     ),
                     Expanded(
                         child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: EdgeInsets.all(8.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 class LangOptions {
   final String code;
   final String englishName;

@@ -1,19 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:english_words/english_words.dart';
-import 'package:provider/provider.dart';
+
 import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter/services.dart';
-import 'package:scandocus_app/main.dart';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:camera/camera.dart';
 
-import '../models/lang_options.dart';
 import '../widgets/language_list.dart';
 import 'home_page.dart';
 
