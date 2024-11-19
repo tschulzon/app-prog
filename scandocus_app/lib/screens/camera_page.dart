@@ -84,8 +84,24 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         future: _initializeControllerFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            // If the Future is complete, display the preview.
-            return CameraPreview(_controller);
+            //Make CameraPreview Fullscreen on every Device
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final double screenRatio =
+                    constraints.maxWidth / constraints.maxHeight;
+                final double previewRatio = _controller.value.aspectRatio;
+
+                return OverflowBox(
+                  maxWidth: screenRatio > previewRatio
+                      ? constraints.maxWidth
+                      : constraints.maxHeight * previewRatio,
+                  maxHeight: screenRatio > previewRatio
+                      ? constraints.maxWidth / previewRatio
+                      : constraints.maxHeight,
+                  child: CameraPreview(_controller),
+                );
+              },
+            );
           } else {
             // Otherwise, display a loading indicator.
             return const Center(child: CircularProgressIndicator());
@@ -126,6 +142,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         },
         child: const Icon(Icons.camera_alt),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
