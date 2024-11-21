@@ -1,43 +1,159 @@
-[
+{
+  "documents": [
+
     {
-      "Dateiname": "Rechnung_123",
-      "ScanDatum": "2024-11-19",
-      "ScanUhrzeit": "14:35",
-      "Seitenzahl": 3,
-      "Sprache": "Deutsch",
-      "Dokumententext": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR."
+      "fileName": "Rechnung_123",
+      "pages": [
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 1,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.",
+          "images": "assets/Doc1.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 2,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 3,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 4,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 5,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 6,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 7,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 8,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        }
+      ]
     },
     {
-      "Dateiname": "Vertrag_ABC",
-      "ScanDatum": "2024-11-18",
-      "ScanUhrzeit": "10:15",
-      "Seitenzahl": 5,
-      "Sprache": "Englisch",
-      "Dokumententext": "This is a sample contract document. Please review and sign at the bottom of page 5."
+      "fileName": "Vertrag_ABC",
+      "pages": [
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 1,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/Doc1.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 2,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        }
+      ]
     },
     {
-      "Dateiname": "Notizen_Meeting",
-      "ScanDatum": "2024-11-17",
-      "ScanUhrzeit": "16:20",
-      "Seitenzahl": 2,
-      "Sprache": "Deutsch",
-      "Dokumententext": "Notizen aus dem Meeting mit den wichtigsten Punkten zur Projektplanung."
+      "fileName": "Notizen_Meeting",
+      "pages": [
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 1,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/Doc1.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 2,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        }
+      ]
     },
     {
-      "Dateiname": "Präsentation_Planung",
-      "ScanDatum": "2024-11-16",
-      "ScanUhrzeit": "09:45",
-      "Seitenzahl": 10,
-      "Sprache": "Englisch",
-      "Dokumententext": "Presentation on project planning with detailed timelines and resource allocations."
+      "fileName": "Präsentation_Planung",
+      "pages": [
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 1,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/Doc1.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 2,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        }
+      ]
     },
     {
-      "Dateiname": "Handbuch_IT",
-      "ScanDatum": "2024-11-15",
-      "ScanUhrzeit": "11:00",
-      "Seitenzahl": 120,
-      "Sprache": "Deutsch",
-      "Dokumententext": "IT-Handbuch mit umfassenden Anleitungen zur Nutzung der Unternehmenssoftware."
+      "fileName": "Handbuch_IT",
+      "pages": [
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 1,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/Doc1.png"
+        },
+        {
+          "scanDate": "2024-11-19",
+          "scanTime": "14:35",
+          "siteNumber": 2,
+          "language": "Deutsch",
+          "docText": "Dies ist der Text einer gescannten Rechnung. Der Betrag beträgt 120,50 EUR.",
+          "images": "assets/eng_bw.png"
+        }
+      ]
     }
   ]
+}
   

@@ -73,6 +73,8 @@ flutter:
   - assets/tessdata/
   - assets/eng_bw.png
   - assets/languages.json
+  - assets/dummy.json
+  - assets/Doc1.png
     # - images/a_dot_burr.jpeg
     # - images/a_dot_ham.jpeg
 
