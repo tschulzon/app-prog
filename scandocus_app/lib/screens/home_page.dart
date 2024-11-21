@@ -84,9 +84,7 @@ class _HomePageState extends State<HomePage> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('Gescannte Elemente')),
-        body: SingleChildScrollView(
-          child: DocumentsView(), // Zeigt die andere Seite an
-        ),
+        body: DocumentsView(), // Zeigt die andere Seite an,
         bottomNavigationBar: CustomNavigationBar(
           currentPageIndex: _currentPageIndex,
           onDestinationSelected: (index) {
