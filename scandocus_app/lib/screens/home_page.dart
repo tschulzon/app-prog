@@ -62,8 +62,7 @@ class _HomePageState extends State<HomePage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OcrProcessView(
-              selectedImage: selectedImage, cameras: widget.cameras),
+          builder: (context) => OcrProcessView(selectedImage: selectedImage),
         ),
       ).then((value) {
         // Wenn zurückgekehrt wird (z. B. nach OCR oder der Kamera), setzen wir den Index auf 0 zurück
@@ -97,10 +96,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => TakePictureScreen(
-                      camera: selectedCamera,
-                      cameras: widget.cameras,
-                    ),
+                    builder: (context) => TakePictureScreen(),
                   ),
                 ).then((value) {
                   // Wenn zurückgekehrt wird (z. B. nach OCR oder der Kamera), setzen wir den Index auf 0 zurück

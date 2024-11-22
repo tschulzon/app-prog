@@ -6,36 +6,51 @@ import '../screens/ocr_page.dart';
 
 // A screen that allows users to take a picture using a given camera.
 class TakePictureScreen extends StatefulWidget {
-  final List<CameraDescription> cameras;
+  // final List<CameraDescription> cameras;
 
-  const TakePictureScreen(
-      {super.key, required this.camera, required this.cameras});
+  const TakePictureScreen({super.key});
 
-  final CameraDescription camera;
+  // final CameraDescription camera;
 
   @override
   TakePictureScreenState createState() => TakePictureScreenState();
 }
 
 class TakePictureScreenState extends State<TakePictureScreen> {
-  late CameraController _controller;
-  late Future<void> _initializeControllerFuture;
+  CameraController? _controller;
+  Future<void>? _initializeControllerFuture;
   File? selectedImage; // Ausgewähltes Bild als Datei
 
   @override
   void initState() {
     super.initState();
-    // To display the current output from the Camera,
-    // create a CameraController.
-    _controller = CameraController(
-      // Get a specific camera from the list of available cameras.
-      widget.camera,
-      // Define the resolution to use.
-      ResolutionPreset.medium,
-    );
+    _setupCamera();
+  }
 
-    // Next, initialize the controller. This returns a Future.
-    _initializeControllerFuture = _controller.initialize();
+  Future<void> _setupCamera() async {
+    try {
+      // Lade die Liste der verfügbaren Kameras
+      final cameras = await availableCameras();
+
+      if (cameras.isNotEmpty) {
+        // Wähle die erste Kamera (Rückkamera) aus
+        final camera = cameras.first;
+
+        // Initialisiere den Controller
+        _controller = CameraController(
+          camera,
+          ResolutionPreset.medium,
+        );
+
+        // Initialisiere die Kamera
+        _initializeControllerFuture = _controller!.initialize();
+        setState(() {}); // Aktualisiere den Zustand
+      } else {
+        print('Keine Kameras verfügbar.');
+      }
+    } catch (e) {
+      print('Fehler beim Laden der Kamera: $e');
+    }
   }
 
   // Navigiere zum OCR-Prozess-Bildschirm und übergebe das Bild
@@ -44,8 +59,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OcrProcessView(
-              selectedImage: selectedImage, cameras: widget.cameras),
+          builder: (context) => OcrProcessView(selectedImage: selectedImage),
         ),
       );
     } else {
@@ -59,7 +73,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   void dispose() {
     // Dispose of the controller when the widget is disposed.
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -79,7 +93,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
               builder: (context, constraints) {
                 final double screenRatio =
                     constraints.maxWidth / constraints.maxHeight;
-                final double previewRatio = _controller.value.aspectRatio;
+                final double previewRatio = _controller!.value.aspectRatio;
 
                 return OverflowBox(
                   maxWidth: screenRatio > previewRatio
@@ -88,7 +102,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                   maxHeight: screenRatio > previewRatio
                       ? constraints.maxWidth / previewRatio
                       : constraints.maxHeight,
-                  child: CameraPreview(_controller),
+                  child: CameraPreview(_controller!),
                 );
               },
             );
@@ -101,34 +115,35 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       floatingActionButton: FloatingActionButton(
         // Provide an onPressed callback.
         onPressed: () async {
+          if (_controller != null) {
+            try {
+              // Ensure that the camera is initialized.
+              print('Kamera wird initialisiert...');
+              await _initializeControllerFuture;
+
+              // Attempt to take a picture and get the file `image`
+              // where it was saved.
+              print('Versuche, ein Bild aufzunehmen...');
+              final image = await _controller!.takePicture();
+
+              if (!context.mounted) return;
+
+              // If the picture was taken, display it on a new screen.
+              print('Bild aufgenommen: ${image.path}');
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => OcrProcessView(
+                    takenPicture: image.path,
+                  ),
+                ),
+              );
+            } catch (e) {
+              // Fehlerbehandlung, wenn ein Problem beim Aufnehmen des Bildes auftritt
+              print("Fehler beim Aufnehmen des Bildes: $e");
+            }
+          }
           // Take the Picture in a try / catch block. If anything goes wrong,
           // catch the error.
-          try {
-            // Ensure that the camera is initialized.
-            print('Kamera wird initialisiert...');
-            await _initializeControllerFuture;
-
-            // Attempt to take a picture and get the file `image`
-            // where it was saved.
-            print('Versuche, ein Bild aufzunehmen...');
-            final image = await _controller.takePicture();
-
-            if (!context.mounted) return;
-
-            // If the picture was taken, display it on a new screen.
-            print('Bild aufgenommen: ${image.path}');
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => OcrProcessView(
-                  cameras: widget.cameras,
-                  takenPicture: image.path,
-                ),
-              ),
-            );
-          } catch (e) {
-            // Fehlerbehandlung, wenn ein Problem beim Aufnehmen des Bildes auftritt
-            print("Fehler beim Aufnehmen des Bildes: $e");
-          }
         },
         child: const Icon(Icons.camera_alt),
       ),
