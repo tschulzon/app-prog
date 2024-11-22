@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../models/lang_options.dart';
+import '../widgets/progress_bar.dart';
 
 class LanguageList extends StatefulWidget {
   final Function(LangOptions) languageSelected;
@@ -22,6 +23,8 @@ class _LanguageListState extends State<LanguageList> {
   String selectedLanguage = "eng";
   List<String> downloadedLanguages = [];
   String message = ""; // Download Message
+  bool isDownloading = false;
+  double downloadProgress = 0.0;
 
   @override
   void initState() {
@@ -71,7 +74,31 @@ class _LanguageListState extends State<LanguageList> {
   }
 
 // Funktion, um die Sprachdatei herunterzuladen
-  Future<void> addLanguage(String langCode) async {
+  Future<void> addLanguage(String langCode, String langName) async {
+    setState(() {
+      isDownloading = true;
+      downloadProgress = 0.0;
+    });
+
+    // Zeige den Fortschrittsdialog
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Verhindere, dass der Benutzer den Dialog schließt
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Herunterladen von $langName...'),
+              SizedBox(height: 20),
+              ProgressIndicatorExample(), // Fortschrittsbalken
+            ],
+          ),
+        );
+      },
+    );
+
     try {
       print("in AddLanguage");
       HttpClient httpClient = HttpClient();
@@ -88,12 +115,20 @@ class _LanguageListState extends State<LanguageList> {
 
       // Bestätigung
       print('$langCode wurde erfolgreich heruntergeladen und gespeichert!');
+      // Schließe den Dialog
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
       // Aktualisiere den Zustand
       setState(() {
         downloadedLanguages.add(langCode); // Sprache zur Liste hinzufügen
       });
     } catch (e) {
       print('Fehler beim Hinzufügen der Sprache: $e');
+      if (mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -164,7 +199,8 @@ class _LanguageListState extends State<LanguageList> {
                     : IconButton(
                         icon: Icon(Icons.download),
                         onPressed: () async {
-                          await addLanguage(lang.code); // Sprache herunterladen
+                          await addLanguage(lang.code,
+                              lang.englishName); // Sprache herunterladen
                         },
                       ),
                 onTap: isDownloaded

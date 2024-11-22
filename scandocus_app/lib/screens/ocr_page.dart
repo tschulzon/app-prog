@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
 import 'dart:io';
-import 'package:camera/camera.dart';
 
 import '../widgets/language_list.dart';
-import 'home_page.dart';
+import '../widgets/progress_bar.dart';
 
 class OcrProcessView extends StatefulWidget {
-  final List<CameraDescription> cameras;
+  // final List<CameraDescription> cameras;
 
   final File? selectedImage; // Ausgewähltes Bild als Datei
   final String? takenPicture;
@@ -16,7 +15,7 @@ class OcrProcessView extends StatefulWidget {
   const OcrProcessView(
       {super.key,
       this.selectedImage,
-      required this.cameras,
+      // required this.cameras,
       this.takenPicture});
 
   @override
@@ -28,6 +27,10 @@ class _OcrProcessViewState extends State<OcrProcessView> {
   late String? takenPicture;
   var showText = "Hier wird Text angezeigt";
   String selectedLanguage = "eng";
+
+  bool isDownloading = false;
+  bool isScanning = false;
+  bool scanningDone = false;
 
   @override
   void initState() {
@@ -58,6 +61,10 @@ class _OcrProcessViewState extends State<OcrProcessView> {
   // Methode für die OCR-Erkennung
   Future<void> performOCR() async {
     String? imagePath;
+    setState(() {
+      isScanning = true; //activate
+      scanningDone = false;
+    });
 
     // Überprüfen, ob `selectedImage` oder `takenPicture` nicht null sind
     if (selectedImage != null) {
@@ -83,10 +90,14 @@ class _OcrProcessViewState extends State<OcrProcessView> {
 
       // Aktualisiere den Status
       setState(() {
+        isScanning = false;
+        scanningDone = true;
         showText = extractedText;
       });
     } catch (e) {
       setState(() {
+        isScanning = false;
+        scanningDone = true;
         showText = "Fehler bei der OCR-Erkennung: $e";
       });
     }
@@ -131,27 +142,49 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                     ],
                   ),
                 ),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      showText,
-                      textAlign: TextAlign.center,
+                Visibility(
+                  visible: isScanning,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        children: [
+                          Text('Text wird erkannt...'),
+                          SizedBox(height: 10),
+                          ProgressIndicatorExample(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HomePage(cameras: widget.cameras),
+                Visibility(
+                  visible: scanningDone,
+                  child: Column(
+                    children: [
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            showText, // Text anzeigen
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                    );
-                    print("Speichernbutton gedrückt");
-                  },
-                  icon: const Icon(Icons.save),
-                  label: Text("Speichern"),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          // Navigator.pushReplacement(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (context) => HomePage(cameras: widget.cameras),
+                          //   ),
+                          // );
+                          print("Speichernbutton gedrückt");
+                        },
+                        icon: const Icon(Icons.save),
+                        label: Text("Speichern"),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
