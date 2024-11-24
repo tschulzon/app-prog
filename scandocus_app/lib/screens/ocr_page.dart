@@ -5,6 +5,7 @@ import 'dart:io';
 
 import '../widgets/language_list.dart';
 import '../widgets/progress_bar.dart';
+import '../services/api_service.dart';
 
 class OcrProcessView extends StatefulWidget {
   // final List<CameraDescription> cameras;
@@ -171,13 +172,23 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                         ),
                       ),
                       ElevatedButton.icon(
-                        onPressed: () {
+                        onPressed: () async {
                           // Navigator.pushReplacement(
                           //   context,
                           //   MaterialPageRoute(
                           //     builder: (context) => HomePage(cameras: widget.cameras),
                           //   ),
                           // );
+                          // Dynamische Prüfungen und Fallback-Logik
+                          // await apiService.testConnection();
+                          ApiService apiService = ApiService();
+                          await apiService.sendDataToServer(
+                            'example.txt',
+                            'Dies ist ein Testdokument.',
+                            language: 'de',
+                            scanDate: '2024-11-24T10:00:00Z',
+                          );
+
                           print("Speichernbutton gedrückt");
                         },
                         icon: const Icon(Icons.save),
