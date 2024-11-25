@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:scandocus_app/models/document.dart';
 import '../screens/doc_page_overview.dart';
+import '../services/api_service.dart';
 
 class DocumentsView extends StatefulWidget {
   const DocumentsView({super.key});
@@ -13,34 +14,39 @@ class DocumentsView extends StatefulWidget {
 }
 
 class _DocumentsViewState extends State<DocumentsView> {
+  // Future<List<Document>> loadDocuments() async {
+  //   try {
+  //     // Lade die JSON-Datei aus den Assets
+  //     final String response = await rootBundle.loadString('assets/dummy.json');
+
+  //     // Überprüfe den Inhalt der geladenen JSON-Datei
+  //     print("Geladene JSON-Datei: $response");
+
+  //     // Parsen des JSON-Strings
+  //     final Map<String, dynamic> data = json.decode(response);
+
+  //     // Überprüfen, ob 'documents' null ist oder nicht
+  //     if (data['documents'] == null) {
+  //       print('Fehler: "documents" sind null.');
+  //       return []; // Rückgabe einer leeren Liste, wenn keine Dokumente vorhanden sind
+  //     }
+
+  //     final List<dynamic> documentsList = data['documents'];
+
+  //     // Umwandlung der JSON-Daten in eine Liste von Document-Objekten
+  //     return documentsList.map((item) => Document.fromJson(item)).toList();
+  //   } catch (e) {
+  //     print("Fehler beim Laden der JSON-Daten: $e");
+  //     return []; // Rückgabe einer leeren Liste im Fehlerfall
+  //   }
+  // }
+
   Future<List<Document>> loadDocuments() async {
-    try {
-      // Lade die JSON-Datei aus den Assets
-      final String response = await rootBundle.loadString('assets/dummy.json');
-
-      // Überprüfe den Inhalt der geladenen JSON-Datei
-      print("Geladene JSON-Datei: $response");
-
-      // Parsen des JSON-Strings
-      final Map<String, dynamic> data = json.decode(response);
-
-      // Überprüfen, ob 'documents' null ist oder nicht
-      if (data['documents'] == null) {
-        print('Fehler: "documents" sind null.');
-        return []; // Rückgabe einer leeren Liste, wenn keine Dokumente vorhanden sind
-      }
-
-      final List<dynamic> documentsList = data['documents'];
-
-      // Umwandlung der JSON-Daten in eine Liste von Document-Objekten
-      return documentsList.map((item) => Document.fromJson(item)).toList();
-    } catch (e) {
-      print("Fehler beim Laden der JSON-Daten: $e");
-      return []; // Rückgabe einer leeren Liste im Fehlerfall
-    }
+    return await ApiService().getSolrData();
   }
 
   TimeOfDay selectedTime = TimeOfDay.now(); // Aktuelle Zeit initialisieren
+
   void _showFilterDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -195,16 +201,16 @@ class _DocumentsViewState extends State<DocumentsView> {
                 child: ListView.builder(
                   itemCount: documents.length,
                   itemBuilder: (context, index) {
-                    Document doc = documents[index];
-                    DocumentPage firstPage = doc.pages[0];
+                    final doc = documents[index];
+                    // DocumentPage firstPage = doc.pages[0];
 
                     return GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    DocumentPageOvereview(document: doc)));
+                        // Navigator.push(
+                        //     context,
+                        //     MaterialPageRoute(
+                        //         builder: (context) =>
+                        //             DocumentPageOvereview(document: doc)));
                       },
                       child: Card(
                         elevation: 4.0,
@@ -217,9 +223,9 @@ class _DocumentsViewState extends State<DocumentsView> {
                                 child: SizedBox(
                                   width: 70,
                                   height: 100,
-                                  child: firstPage.image.isNotEmpty
+                                  child: doc.image.isNotEmpty
                                       ? Image.asset(
-                                          firstPage.image, // Der Pfad zum Bild
+                                          doc.image, // Der Pfad zum Bild
                                           fit: BoxFit.cover,
                                           errorBuilder:
                                               (context, error, stackTrace) {
@@ -245,11 +251,10 @@ class _DocumentsViewState extends State<DocumentsView> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      Text('Scan-Datum: ${firstPage.scanDate}'),
-                                      Text(
-                                          'Scan-Uhrzeit: ${firstPage.scanTime}'),
-                                      Text('Sprache: ${firstPage.language}'),
-                                      Text('Seitenzahl: ${doc.pages.length}'),
+                                      Text('Scan-Datum: ${doc.scanDate}'),
+                                      Text('Scan-Uhrzeit: ${doc.scanTime}'),
+                                      Text('Sprache: ${doc.language}'),
+                                      Text('Seitenzahl: ${doc.siteNumber}'),
                                       // const SizedBox(height: 8.0),
                                     ],
                                   ),

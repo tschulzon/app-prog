@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 
 import '../screens/ocr_page.dart';
+import '../screens/docsession.dart';
+import '../models/document_session.dart';
+import '../screens/camera_preview_overview.dart';
 
 // A screen that allows users to take a picture using a given camera.
 class TakePictureScreen extends StatefulWidget {
@@ -17,6 +20,8 @@ class TakePictureScreen extends StatefulWidget {
 }
 
 class TakePictureScreenState extends State<TakePictureScreen> {
+  DocumentSession currentSession =
+      DocumentSession(fileName: "Testdokument 2 lol");
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
   File? selectedImage; // Ausgewähltes Bild als Datei
@@ -132,9 +137,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
               print('Bild aufgenommen: ${image.path}');
               await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => OcrProcessView(
-                    takenPicture: image.path,
-                  ),
+                  builder: (context) => DisplayPictureScreen(
+                      capturedImage: image.path, session: currentSession),
                 ),
               );
             } catch (e) {
@@ -154,9 +158,14 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 
 // A widget that displays the picture taken by the user.
 class DisplayPictureScreen extends StatelessWidget {
-  final String imagePath;
+  final String capturedImage;
+  final DocumentSession session;
 
-  const DisplayPictureScreen({super.key, required this.imagePath});
+  const DisplayPictureScreen({
+    super.key,
+    required this.capturedImage,
+    required this.session,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +173,142 @@ class DisplayPictureScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Display the Picture')),
       // The image is stored as a file on the device. Use the `Image.file`
       // constructor with the given path to display the image.
-      body: Image.file(File(imagePath)),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: Column(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 3,
+                      spreadRadius: 3,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.file(File(capturedImage))),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 3,
+                          spreadRadius: 3,
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      tooltip: 'Dokument verwerfen',
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        Navigator.pop(context); // Zurück zur Kamera
+                      },
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      tooltip: 'Dokument verwenden',
+                      icon: const Icon(Icons.check),
+                      onPressed: () {
+                        session.addPage(DocumentPage(
+                          imagePath: capturedImage,
+                          captureDate: "2024-11-24T10:00:00Z",
+                          pageNumber: session.pages.length + 1,
+                        ));
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                DocumentOverview(session: session),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      tooltip: 'Seite löschen',
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        final SnackBar snackBar = SnackBar(
+                          content: const Text('Dokument wurde gelöscht!'),
+                          action: SnackBarAction(
+                            label: 'Undo',
+                            onPressed: () {},
+                          ),
+                        );
+
+                        // Find the ScaffoldMessenger in the widget tree
+                        // and use it to show a SnackBar.
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      },
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      tooltip: 'Weiteres Dokument aufnehmen',
+                      icon: const Icon(Icons.plus_one),
+                      onPressed: () {
+                        session.addPage(DocumentPage(
+                          imagePath: capturedImage,
+                          captureDate: "2024-11-24T10:00:00Z",
+                          pageNumber: session.pages.length + 1,
+                        ));
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

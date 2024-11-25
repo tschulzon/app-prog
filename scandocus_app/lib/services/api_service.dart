@@ -1,5 +1,6 @@
 import 'dart:convert'; // Für JSON-Dekodierung
 import 'package:http/http.dart' as http;
+import '../models/document.dart';
 
 class ApiService {
   //IP from my computer for testing connection from physical device
@@ -21,7 +22,10 @@ class ApiService {
 
   // Future<void>, um die Funktion asynchron zu gestalten
   Future<void> sendDataToServer(String fileName, String docText,
-      {String? language, String? scanDate}) async {
+      {String? language,
+      String? scanDate,
+      String? imageUrl,
+      int? pageNumber}) async {
     final url =
         Uri.parse('http://192.168.178.193:3000/api/solr'); // Node.js-Server-URL
 
@@ -31,6 +35,8 @@ class ApiService {
       'language':
           language ?? 'de', // Standardwert, wenn Sprache nicht angegeben ist
       'scanDate': scanDate ?? DateTime.now().toIso8601String(),
+      'images': imageUrl,
+      'siteNumber': pageNumber,
     };
 
     try {
@@ -47,6 +53,29 @@ class ApiService {
       }
     } catch (e) {
       print('Fehler beim Senden der Anfrage: $e');
+    }
+  }
+
+  Future<List<Document>> getSolrData(
+      {int start = 0, int rows = 50, String? query}) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/search?start=$start&rows=$rows&query=${query ?? "*:*"}'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return (data['docs'] as List)
+            .map((doc) => Document.fromJson(doc))
+            .toList();
+      } else {
+        print("Fehler: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      print("Verbindungsfehler: $e");
+      return [];
     }
   }
 }

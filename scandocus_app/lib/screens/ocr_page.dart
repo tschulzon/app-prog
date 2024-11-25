@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
 import 'dart:io';
@@ -84,6 +87,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
 
     try {
       print("OCR wird ausgeführt...");
+
       String extractedText = await FlutterTesseractOcr.extractText(
         imagePath, // Pfad zum ausgewählten Bild
         language: selectedLanguage,
@@ -103,6 +107,54 @@ class _OcrProcessViewState extends State<OcrProcessView> {
       });
     }
   }
+
+  // Future<void> saveImageAndSendData() async {
+  //   // Stelle sicher, dass ein Bild vorhanden ist
+  //   if (selectedImage == null && takenPicture == null) {
+  //     print('Kein Bild zum Speichern und Senden vorhanden.');
+  //     return;
+  //   }
+
+  //   try {
+  //     // Bildquelle bestimmen (Galerie oder Kamera)
+  //     final File imageFile = selectedImage ?? File(takenPicture!);
+
+  //     // Bild lokal speichern
+  //     final directory =
+  //         await getApplicationDocumentsDirectory(); //Pfad vom Anwenderverzeichnis holen
+  //     // Erstelle den Ordnerpfad
+  //     final folderPath = '${directory.path}/Scan2Doc';
+
+  //     // Überprüfe, ob der Ordner existiert, und erstelle ihn, falls nicht
+  //     final folder = Directory(folderPath);
+  //     if (!await folder.exists()) {
+  //       await folder.create(recursive: true); // Ordner erstellen
+  //       print('Ordner erstellt: $folderPath');
+  //     } else {
+  //       print('Ordner existiert bereits: $folderPath');
+  //     }
+
+  //     final fileName = 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+  //     final filePath = '$folderPath/$fileName';
+  //     await imageFile.copy(filePath);
+
+  //     print('Bild erfolgreich gespeichert: $filePath');
+
+  //     // Textdaten und Bild-URL an Solr senden
+  //     final apiService = ApiService(); // Dein API-Service
+  //     await apiService.sendDataToServer(
+  //       'OCR-ScanTest1', // Beispiel Dateiname
+  //       showText, // Erkannter Text aus OCR
+  //       language: selectedLanguage,
+  //       scanDate: "2024-11-24T10:00:00Z",
+  //       imageUrl: filePath, // Lokaler Pfad des Bildes
+  //     );
+
+  //     print('Daten erfolgreich an Solr gesendet.');
+  //   } catch (e) {
+  //     print('Fehler beim Speichern und Senden: $e');
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -181,18 +233,15 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                           // );
                           // Dynamische Prüfungen und Fallback-Logik
                           // await apiService.testConnection();
-                          ApiService apiService = ApiService();
-                          await apiService.sendDataToServer(
-                            'example.txt',
-                            'Dies ist ein Testdokument.',
-                            language: 'de',
-                            scanDate: '2024-11-24T10:00:00Z',
-                          );
-
-                          print("Speichernbutton gedrückt");
+                          // saveImageAndSendData();
+                          Navigator.pop(context, {
+                            'scannedText': showText,
+                            'selectedLanguage': selectedLanguage,
+                          }); // Text zurückgeben
+                          print("Verwenden Button gedrückt");
                         },
-                        icon: const Icon(Icons.save),
-                        label: Text("Speichern"),
+                        icon: const Icon(Icons.check),
+                        label: Text("Verwenden"),
                       ),
                     ],
                   ),

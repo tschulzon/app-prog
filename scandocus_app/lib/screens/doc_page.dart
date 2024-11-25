@@ -8,9 +8,9 @@ import '../screens/camera_page.dart';
 
 class Detailpage extends StatefulWidget {
   final Document document;
-  final DocumentPage page;
+  // final DocumentPage page;
 
-  const Detailpage({super.key, required this.document, required this.page});
+  const Detailpage({super.key, required this.document});
 
   @override
   State<Detailpage> createState() => _DetailpageState();
@@ -21,7 +21,7 @@ class _DetailpageState extends State<Detailpage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Seite ${widget.page.siteNumber}'),
+        title: Text('Seite ${widget.document.siteNumber}'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -44,7 +44,7 @@ class _DetailpageState extends State<Detailpage> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: Image.asset(
-                        widget.page.image,
+                        widget.document.image,
                       ),
                     ),
                   ),
@@ -56,7 +56,7 @@ class _DetailpageState extends State<Detailpage> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        widget.page.docText,
+                        widget.document.docText as String,
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -65,7 +65,7 @@ class _DetailpageState extends State<Detailpage> {
               ),
             )),
       ),
-      bottomNavigationBar: BottomButtons(page: widget.page),
+      bottomNavigationBar: BottomButtons(page: widget.document),
     );
   }
 }
@@ -73,7 +73,7 @@ class _DetailpageState extends State<Detailpage> {
 class BottomButtons extends StatelessWidget {
   const BottomButtons({super.key, required this.page});
 
-  final DocumentPage page;
+  final Document page;
 
   @override
   Widget build(BuildContext context) {
@@ -139,12 +139,12 @@ class BottomButtons extends StatelessWidget {
                           leading: Icon(Icons.camera),
                           title: Text("Foto aufnehmen"),
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TakePictureScreen(),
-                              ),
-                            );
+                            // Navigator.push(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (context) => TakePictureScreen(),
+                            //   ),
+                            // );
                             // Navigator.pop(context);
                           },
                         ),

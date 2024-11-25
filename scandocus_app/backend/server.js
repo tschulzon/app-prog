@@ -22,7 +22,7 @@ app.use(express.json());
 
 // POST-Route für /api/solr
 app.post('/api/solr', async (req, res) => {
-  const { fileName, docText, language, scanDate } = req.body;
+  const { fileName, images, docText, language, scanDate, siteNumber } = req.body;
 
   // Sicherheitsüberprüfung
   if (!fileName || !docText) {
@@ -40,6 +40,8 @@ app.post('/api/solr', async (req, res) => {
           docText: docText,
           language: language || 'unknown',  // Falls keine Sprache übergeben wurde, 'unknown' verwenden
           scanDate: scanDate || new Date().toISOString(), // Verwende das übergebene scanDate oder das aktuelle Datum
+          images: images, // Das Base64-kodierte Bild
+          siteNumber: siteNumber,
         }
       ],
       {
@@ -62,6 +64,20 @@ app.post('/api/solr', async (req, res) => {
   }
 });
 
+app.get('/search', async (req, res) => {
+  const { query, start = 0, rows = 50 } = req.query; // Pagination und Suchparameter
+  const solrQuery = query ? encodeURIComponent(query) : '*:*';
+
+  try {
+    const solrResponse = await axios.get(
+      `http://localhost:8983/solr/scan2doc/select?indent=true&q=${solrQuery}&start=${start}&rows=${rows}&fl=id,fileName,scanDate,scanTime,siteNumber,language,images,docText`
+    );
+    res.json(solrResponse.data.response); // Nur relevante Daten senden
+  } catch (error) {
+    console.error('Error querying Solr:', error);
+    res.status(500).send('Error querying Solr');
+  }
+});
 
 // // API-Route für Solr-Suche
 // app.post('/search', async (req, res) => {
@@ -99,11 +115,6 @@ app.get('/api/test', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Middleware läuft auf http://localhost:${PORT}`);
 });
-
-// app.all('/api/send-to-solr', (req, res) => {
-//     console.log(`Empfangene Methode: ${req.method}`);
-//     res.status(200).json({ message: `Methode war: ${req.method}` });
-//   });
 
 app.use((req, res, next) => {
 console.log(`Request Method: ${req.method}, Request URL: ${req.url}`);
