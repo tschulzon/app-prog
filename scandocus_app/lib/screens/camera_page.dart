@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:camera/camera.dart';
+import 'package:intl/intl.dart';
 
 import '../screens/ocr_page.dart';
 import '../screens/docsession.dart';
@@ -20,8 +21,7 @@ class TakePictureScreen extends StatefulWidget {
 }
 
 class TakePictureScreenState extends State<TakePictureScreen> {
-  DocumentSession currentSession =
-      DocumentSession(fileName: "Testdokument 2 lol");
+  DocumentSession currentSession = DocumentSession(fileName: "Neues Dokument");
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
   File? selectedImage; // Ausgewähltes Bild als Datei
@@ -30,6 +30,12 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   void initState() {
     super.initState();
     _setupCamera();
+
+    final now = DateTime.now();
+    final formattedDate = DateFormat('yyyy-MM-dd_HH-mm-ss').format(now);
+    final fileName = "Dokument_$formattedDate";
+
+    currentSession = DocumentSession(fileName: fileName);
   }
 
   Future<void> _setupCamera() async {
@@ -177,6 +183,8 @@ class DisplayPictureScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Center(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 decoration: BoxDecoration(
@@ -194,6 +202,7 @@ class DisplayPictureScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     child: Image.file(File(capturedImage))),
               ),
+              SizedBox(height: 50),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
@@ -245,36 +254,6 @@ class DisplayPictureScreen extends StatelessWidget {
                                 DocumentOverview(session: session),
                           ),
                         );
-                      },
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(50),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      tooltip: 'Seite löschen',
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        final SnackBar snackBar = SnackBar(
-                          content: const Text('Dokument wurde gelöscht!'),
-                          action: SnackBarAction(
-                            label: 'Undo',
-                            onPressed: () {},
-                          ),
-                        );
-
-                        // Find the ScaffoldMessenger in the widget tree
-                        // and use it to show a SnackBar.
-                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
                       },
                     ),
                   ),

@@ -8,7 +8,6 @@ import '../screens/camera_page.dart';
 
 class Detailpage extends StatefulWidget {
   final Document document;
-  // final DocumentPage page;
 
   const Detailpage({super.key, required this.document});
 
@@ -17,6 +16,14 @@ class Detailpage extends StatefulWidget {
 }
 
 class _DetailpageState extends State<Detailpage> {
+  late Document doc;
+
+  @override
+  void initState() {
+    super.initState();
+    doc = widget.document;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,9 +50,16 @@ class _DetailpageState extends State<Detailpage> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
-                      child: Image.asset(
-                        widget.document.image,
-                      ),
+                      child: doc.image.isNotEmpty
+                          ? Image.asset(
+                              doc.image, // Der Pfad zum Bild
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
+                                return const Icon(Icons.error);
+                              },
+                            )
+                          : const Icon(Icons.image_not_supported),
                     ),
                   ),
                   SizedBox(
@@ -56,7 +70,7 @@ class _DetailpageState extends State<Detailpage> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        widget.document.docText as String,
+                        doc.docText.join('\n'),
                         textAlign: TextAlign.center,
                       ),
                     ),

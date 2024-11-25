@@ -14,35 +14,27 @@ class DocumentsView extends StatefulWidget {
 }
 
 class _DocumentsViewState extends State<DocumentsView> {
-  // Future<List<Document>> loadDocuments() async {
-  //   try {
-  //     // Lade die JSON-Datei aus den Assets
-  //     final String response = await rootBundle.loadString('assets/dummy.json');
+  List<Document> documents = [];
+  bool isLoading = true;
 
-  //     // Überprüfe den Inhalt der geladenen JSON-Datei
-  //     print("Geladene JSON-Datei: $response");
+  @override
+  void initState() {
+    super.initState();
+    loadDocuments(); // Initialer Dokumenten-Load
+  }
 
-  //     // Parsen des JSON-Strings
-  //     final Map<String, dynamic> data = json.decode(response);
-
-  //     // Überprüfen, ob 'documents' null ist oder nicht
-  //     if (data['documents'] == null) {
-  //       print('Fehler: "documents" sind null.');
-  //       return []; // Rückgabe einer leeren Liste, wenn keine Dokumente vorhanden sind
-  //     }
-
-  //     final List<dynamic> documentsList = data['documents'];
-
-  //     // Umwandlung der JSON-Daten in eine Liste von Document-Objekten
-  //     return documentsList.map((item) => Document.fromJson(item)).toList();
-  //   } catch (e) {
-  //     print("Fehler beim Laden der JSON-Daten: $e");
-  //     return []; // Rückgabe einer leeren Liste im Fehlerfall
-  //   }
-  // }
-
-  Future<List<Document>> loadDocuments() async {
-    return await ApiService().getSolrData();
+  Future<void> loadDocuments() async {
+    try {
+      final fetchedDocuments = await ApiService().getSolrData();
+      setState(() {
+        documents = fetchedDocuments;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Fehler beim Laden der Dokumente: $e");
+    }
+    print("DOKUMENTE:");
+    print(documents);
   }
 
   TimeOfDay selectedTime = TimeOfDay.now(); // Aktuelle Zeit initialisieren
@@ -144,134 +136,144 @@ class _DocumentsViewState extends State<DocumentsView> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Document>>(
-      future: loadDocuments(),
-      builder: (context, snapshot) {
-        // Wenn die Daten noch geladen werden
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    // Gruppiere Dokumente nach `fileName` und zähle die Seiten
+    final groupedDocuments = <String, List<Document>>{};
+    for (var doc in documents) {
+      if (!groupedDocuments.containsKey(doc.fileName)) {
+        groupedDocuments[doc.fileName] = [];
+      }
+      groupedDocuments[doc.fileName]!.add(doc);
+    }
 
-        // Wenn ein Fehler auftritt
-        if (snapshot.hasError) {
-          return Center(child: Text('Fehler: ${snapshot.error}'));
-        }
+    // Erstelle eine Liste aus den gruppierten Dokumenten
+    final uniqueDocuments = groupedDocuments.entries
+        .map((entry) => {
+              "fileName": entry.key,
+              "count": entry.value.length,
+              "exampleDoc":
+                  entry.value.first, // Ein Beispiel-Dokument für Details
+            })
+        .toList();
 
-        // Wenn keine Daten vorhanden sind
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('Keine Dokumente verfügbar.'));
-        }
-
-        // Wenn die Daten erfolgreich geladen wurden, zeige die Liste
-        List<Document> documents = snapshot.data!;
-
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: <Widget>[
-              // Die Suchleiste
-              Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: SearchBar(
-                        onChanged: (String value) {
-                          print("Suchabfrage: $value");
-                        },
-                        leading: const Icon(Icons.search),
-                        hintText: "Dateiname suchen",
-                        trailing: <Widget>[
-                          IconButton(
-                            onPressed: () {
-                              _showFilterDialog(context);
-                              // Hier könntest du den Filterdialog anzeigen
-                            },
-                            icon: const Icon(Icons.filter_alt),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Liste der Dokumente aus JSON
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: <Widget>[
+          // Die Suchleiste
+          Row(
+            children: [
               Expanded(
-                child: ListView.builder(
-                  itemCount: documents.length,
-                  itemBuilder: (context, index) {
-                    final doc = documents[index];
-                    // DocumentPage firstPage = doc.pages[0];
-
-                    return GestureDetector(
-                      onTap: () {
-                        // Navigator.push(
-                        //     context,
-                        //     MaterialPageRoute(
-                        //         builder: (context) =>
-                        //             DocumentPageOvereview(document: doc)));
-                      },
-                      child: Card(
-                        elevation: 4.0,
-                        child: SizedBox(
-                          height: 150,
-                          child: Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: SizedBox(
-                                  width: 70,
-                                  height: 100,
-                                  child: doc.image.isNotEmpty
-                                      ? Image.asset(
-                                          doc.image, // Der Pfad zum Bild
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                            // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
-                                            return const Icon(Icons.error);
-                                          },
-                                        )
-                                      : const Icon(Icons.image_not_supported),
-                                ),
-                              ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        doc.fileName,
-                                        style: const TextStyle(
-                                          fontSize: 18.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text('Scan-Datum: ${doc.scanDate}'),
-                                      Text('Scan-Uhrzeit: ${doc.scanTime}'),
-                                      Text('Sprache: ${doc.language}'),
-                                      Text('Seitenzahl: ${doc.siteNumber}'),
-                                      // const SizedBox(height: 8.0),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SearchBar(
+                    onChanged: (String value) {
+                      print("Suchabfrage: $value");
+                    },
+                    leading: const Icon(Icons.search),
+                    hintText: "Dateiname suchen",
+                    trailing: <Widget>[
+                      IconButton(
+                        onPressed: () {
+                          _showFilterDialog(context);
+                          // Hier könntest du den Filterdialog anzeigen
+                        },
+                        icon: const Icon(Icons.filter_alt),
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        );
-      },
+
+          // Liste der Dokumente aus JSON
+          Expanded(
+            child: isLoading
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: uniqueDocuments.length,
+                    itemBuilder: (context, index) {
+                      final docInfo = uniqueDocuments[index];
+                      final fileName = docInfo["fileName"] as String;
+                      final pageCount = docInfo["count"] as int;
+                      final exampleDoc = docInfo["exampleDoc"] as Document;
+                      final relatedDocs = groupedDocuments[
+                          fileName]!; // Liste der zugehörigen Dokumente
+
+                      return GestureDetector(
+                        onTap: () {
+                          // Navigiere zur DocumentOverviewPage und übergebe die Dokumente
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DocumentPageOvereview(
+                                documents: relatedDocs,
+                                fileName: fileName,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          elevation: 4.0,
+                          child: SizedBox(
+                            height: 150,
+                            child: Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: SizedBox(
+                                    width: 70,
+                                    height: 100,
+                                    child: exampleDoc.image.isNotEmpty
+                                        ? Image.asset(
+                                            exampleDoc
+                                                .image, // Der Pfad zum Bild
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
+                                              return const Icon(Icons.error);
+                                            },
+                                          )
+                                        : const Icon(Icons.image_not_supported),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          fileName,
+                                          style: const TextStyle(
+                                            fontSize: 18.0,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        // Text('Scan-Datum: ${doc.scanDate}'),
+                                        Text(
+                                            'Scan-Uhrzeit: ${exampleDoc.scanTime}'),
+                                        Text('Sprache: ${exampleDoc.language}'),
+                                        Text('Seitenzahl: $pageCount'),
+                                        // const SizedBox(height: 8.0),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

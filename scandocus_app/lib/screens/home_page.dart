@@ -9,9 +9,9 @@ import '../screens/ocr_page.dart';
 import '../screens/camera_page.dart';
 
 class HomePage extends StatefulWidget {
-  final List<CameraDescription> cameras;
+  // final List<CameraDescription> cameras;
 
-  const HomePage({super.key, required this.cameras});
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -26,15 +26,6 @@ class _HomePageState extends State<HomePage> {
 
   File? selectedImage; // Ausgewähltes Bild als Datei
   final ImagePicker picker = ImagePicker();
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.cameras.isNotEmpty) {
-      selectedCamera =
-          widget.cameras.first; // Wähle die erste Kamera als Standard
-    }
-  }
 
   // Methode zum Auswählen eines Bildes
   Future<void> pickImage() async {

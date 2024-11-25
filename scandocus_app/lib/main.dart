@@ -34,7 +34,7 @@ class _MyAppState extends State<MyApp> {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 126, 11, 137))),
-      home: HomePage(cameras: widget.cameras), //Home Widget wird erstellt
+      home: HomePage(), //Home Widget wird erstellt
     );
   }
 }
