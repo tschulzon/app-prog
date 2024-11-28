@@ -1,5 +1,9 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const bodyParser = require('body-parser');
+const moment = require('moment-timezone');
 const axios = require('axios');
 const PORT = 3000;
 
@@ -15,10 +19,36 @@ const SOLR_URL = 'http://localhost:8983/solr/scan2doc/update';
 // Middleware für JSON-Parsing
 app.use(express.json());
 
-// app.post('/api/solr', (req, res) => {
-//   console.log(req.body); // Logge die empfangenen Daten
-//   res.json({ message: 'Anfrage empfangen!', data: req.body });
-// });
+// Zielordner für hochgeladene Bilder
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
+// Check, dass der Ordner existiert
+if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// Speicher- und Dateinamenkonfiguration
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, UPLOADS_DIR); // Zielordner
+    },
+    filename: (req, file, cb) => {
+        // Eindeutigen Dateinamen erzeugen
+        const uniqueName = `${Date.now()}-${file.originalname}`;
+        cb(null, uniqueName);
+    },
+});
+
+const upload = multer({ storage });
+
+// Endpunkt zum Hochladen von Bildern
+app.post('/upload', upload.single('image'), (req, res) => {
+    const filePath = `/uploads/${req.file.filename}`; // Relativer Pfad
+    res.status(200).send({ message: 'Bild hochgeladen', filePath });
+});
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // POST-Route für /api/solr
 app.post('/api/solr', async (req, res) => {
@@ -39,7 +69,7 @@ app.post('/api/solr', async (req, res) => {
           fileName: fileName,
           docText: docText,
           language: language || 'unknown',  // Falls keine Sprache übergeben wurde, 'unknown' verwenden
-          scanDate: scanDate || new Date().toISOString(), // Verwende das übergebene scanDate oder das aktuelle Datum
+          scanDate: moment().tz('Europe/Berlin').format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z',
           images: images, // Das Base64-kodierte Bild
           siteNumber: siteNumber,
         }
@@ -78,6 +108,107 @@ app.get('/search', async (req, res) => {
     res.status(500).send('Error querying Solr');
   }
 });
+
+// Route zum Löschen mehrere Dokumente mit gleichen Namen (quasi auf der Homepage)
+app.delete('/api/deleteDocsByFileName', async (req, res) => {
+  const fileName = req.body.fileName;
+
+  console.log('Dokument-Filename erhalten:', fileName); // Für Debugging
+
+  // Sicherheitsüberprüfung
+  if (!fileName) {
+      return res.status(400).json({ message: 'Dokumenten-Name ist erforderlich!' });
+  }
+
+  try {
+    // Solr-Update
+    const solrUrl = 'http://localhost:8983/solr/scan2doc/update?commit=true';
+    
+    const deleteQuery = {
+      "delete": {
+        "query": `fileName:"${fileName}"`
+      }
+    };
+
+    // Solr DELETE-Request
+    const solrResponse = await axios.post(solrUrl, deleteQuery, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Alle Dokumente mit dem Dateinamen ${fileName} wurden erfolgreich gelöscht!`,
+    });
+  } catch (error) {
+    console.error('Fehler beim Löschen von Solr:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Löschen von Solr',
+      error: error.message,
+    });
+  }
+});
+
+// Route zum Löschen mehrere Dokumente mit gleichen Namen (quasi auf der Homepage)
+app.delete('/api/deleteDocById', async (req, res) => {
+  const id = req.body.id;
+  const fileName = req.body.fileName;
+
+  console.log('Dokument-ID erhalten:', id); // Für Debugging
+  console.log('Dokument-Name erhalten:', fileName); // Für Debugging
+
+
+  // Sicherheitsüberprüfung
+  if (!id || !fileName) {
+      return res.status(400).json({ message: 'Dokumenten-Id ist erforderlich!' });
+  }
+
+  try {
+    // Solr-Update
+    const solrUrl = 'http://localhost:8983/solr/scan2doc/update?commit=true';
+    
+    const deleteQuery = {
+      "delete": {
+        "query": `id:"${id}"`
+      }
+    };
+
+    // Solr DELETE-Request
+    const solrResponse = await axios.post(solrUrl, deleteQuery, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    // Hole alle Dokumente mit dem gleichen Dateinamen und sortiere nach Seitenzahl
+    const solrResponse2 = await axios.get(
+      `http://localhost:8983/solr/scan2doc/select?q=fileName:"${fileName}"&sort=siteNumber asc`
+    );
+
+    const remainingDocs = solrResponse2.data.response.docs;
+
+    // Aktualisiere die Seitenzahlen der verbleibenden Dokumente
+    const updatePayload = remainingDocs.map((doc, index) => ({
+      id: doc.id,
+      siteNumber: { set: index + 1 } // Setzt die Seitenzahl auf index + 1
+    }));
+
+    await axios.post('http://localhost:8983/solr/scan2doc/update?commit=true', updatePayload, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Das Dokument mit der ID ${id} wurde erfolgreich gelöscht!`,
+    });
+  } catch (error) {
+    console.error('Fehler beim Löschen von Solr:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Löschen von Solr',
+      error: error.message,
+    });
+  }
+});
+
 
 // // API-Route für Solr-Suche
 // app.post('/search', async (req, res) => {

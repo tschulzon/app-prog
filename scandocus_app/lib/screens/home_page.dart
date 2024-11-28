@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
+import 'package:scandocus_app/screens/upload_page.dart';
 
 import '../widgets/documents_view.dart';
 import '../widgets/custom_navigation_bar.dart';
@@ -82,7 +83,17 @@ class _HomePageState extends State<HomePage> {
               _currentPageIndex = index;
               // Wenn auf die Galerie geklickt wird, öffne den ImagePicker
               if (_currentPageIndex == 2) {
-                pickImage(); // Öffnet den ImagePicker
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UploadImageScreen(),
+                  ),
+                ).then((value) {
+                  // Wenn zurückgekehrt wird (z. B. nach OCR oder der Kamera), setzen wir den Index auf 0 zurück
+                  setState(() {
+                    _currentPageIndex = 0;
+                  });
+                }); // Öffnet den ImagePicker
               } else if (_currentPageIndex == 1) {
                 Navigator.push(
                   context,

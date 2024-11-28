@@ -5,11 +5,14 @@ import '../screens/ocr_page.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../screens/camera_page.dart';
+import '../services/api_service.dart';
 
 class Detailpage extends StatefulWidget {
   final Document document;
+  final List<Document> documents;
 
-  const Detailpage({super.key, required this.document});
+  const Detailpage(
+      {super.key, required this.document, required this.documents});
 
   @override
   State<Detailpage> createState() => _DetailpageState();
@@ -17,6 +20,8 @@ class Detailpage extends StatefulWidget {
 
 class _DetailpageState extends State<Detailpage> {
   late Document doc;
+  // final String serverUrl = 'http://192.168.178.193:3000';
+  final String serverUrl = 'http://192.168.2.171:3000';
 
   @override
   void initState() {
@@ -51,9 +56,8 @@ class _DetailpageState extends State<Detailpage> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: doc.image.isNotEmpty
-                          ? Image.asset(
-                              doc.image, // Der Pfad zum Bild
-                              fit: BoxFit.cover,
+                          ? Image.network(
+                              '$serverUrl${doc.image}',
                               errorBuilder: (context, error, stackTrace) {
                                 // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
                                 return const Icon(Icons.error);
@@ -79,18 +83,22 @@ class _DetailpageState extends State<Detailpage> {
               ),
             )),
       ),
-      bottomNavigationBar: BottomButtons(page: widget.document),
+      bottomNavigationBar:
+          BottomButtons(page: widget.document, documents: widget.documents),
     );
   }
 }
 
 class BottomButtons extends StatelessWidget {
-  const BottomButtons({super.key, required this.page});
+  const BottomButtons({super.key, required this.page, required this.documents});
+  final List<Document> documents;
 
   final Document page;
 
   @override
   Widget build(BuildContext context) {
+    final apiService = ApiService();
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       height: 70.0,
@@ -199,17 +207,19 @@ class BottomButtons extends StatelessWidget {
               tooltip: 'Seite löschen',
               icon: const Icon(Icons.delete),
               onPressed: () {
+                apiService.deleteDocFromSolr(page.id, page.fileName);
+                // Entferne die Seite aus der Liste der Seiten des Dokuments
+                documents.removeWhere((page) => page.id == this.page.id);
+
                 final SnackBar snackBar = SnackBar(
                   content: const Text('Dokument wurde gelöscht!'),
-                  action: SnackBarAction(
-                    label: 'Undo',
-                    onPressed: () {},
-                  ),
                 );
 
                 // Find the ScaffoldMessenger in the widget tree
                 // and use it to show a SnackBar.
                 ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+                Navigator.pop(context, documents);
               },
             ),
           ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-
+import 'package:path/path.dart';
+import 'package:provider/provider.dart';
 import 'screens/home_page.dart';
+import 'utils/document_provider.dart';
 
 Future<void> main() async {
   // Ensure that plugin services are initialized so that `availableCameras()`
@@ -12,7 +14,12 @@ Future<void> main() async {
   final cameras = await availableCameras();
 
   // Start der App
-  runApp(MyApp(cameras: cameras));
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => DocumentProvider(),
+      child: MyApp(cameras: cameras),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {

@@ -44,15 +44,16 @@ class _DocumentOverviewState extends State<DocumentOverview> {
       // Textdaten und Bild-URL an Solr senden
       final apiService = ApiService();
       for (var page in widget.session.pages) {
-        saveImageLocal(page.imagePath);
+        // Bild hochladen und Pfad erhalten
+        final imagePath = await apiService.uploadImage(File(page.imagePath));
 
         await apiService.sendDataToServer(
           widget.session.fileName,
           page.scannedText, // Text aus OCR
           language: page.language,
           // scanDate: page.captureDate.toIso8601String(),
-          scanDate: "2024-11-24T10:00:00Z",
-          imageUrl: page.imagePath,
+          scanDate: page.captureDate,
+          imageUrl: imagePath,
           pageNumber: page.pageNumber,
         );
       }
