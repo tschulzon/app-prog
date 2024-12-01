@@ -13,8 +13,17 @@ import '../screens/camera_preview_overview.dart';
 class UploadImageScreen extends StatefulWidget {
   final String? existingFilename;
   final int? newPage;
+  final bool? replaceImage;
+  final String? existingId;
+  final int? existingPage;
 
-  const UploadImageScreen({super.key, this.existingFilename, this.newPage});
+  const UploadImageScreen(
+      {super.key,
+      this.existingFilename,
+      this.newPage,
+      this.replaceImage,
+      this.existingId,
+      this.existingPage});
 
   @override
   UploadImageScreenState createState() => UploadImageScreenState();
@@ -26,6 +35,9 @@ class UploadImageScreenState extends State<UploadImageScreen> {
   final ImagePicker picker = ImagePicker();
   late String? existingFilename;
   late int? newPage;
+  late bool? replaceImage;
+  late String? existingId;
+  late int? existingPage;
 
   @override
   void initState() {
@@ -38,6 +50,9 @@ class UploadImageScreenState extends State<UploadImageScreen> {
     currentSession = DocumentSession(fileName: fileName);
     existingFilename = widget.existingFilename;
     newPage = widget.newPage;
+    replaceImage = widget.replaceImage;
+    existingId = widget.existingId;
+    existingPage = widget.existingPage;
   }
 
   // Methode zum Auswählen eines Bildes
@@ -58,6 +73,9 @@ class UploadImageScreenState extends State<UploadImageScreen> {
                 session: currentSession,
                 existingFilename: existingFilename,
                 newPage: newPage,
+                replaceImage: replaceImage,
+                existingId: existingId,
+                existingPage: existingPage,
               ),
             ),
           );

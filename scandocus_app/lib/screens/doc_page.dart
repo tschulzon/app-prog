@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:scandocus_app/screens/upload_page.dart';
 import '../models/document.dart';
 import '../screens/ocr_page.dart';
 import 'package:image_picker/image_picker.dart';
@@ -196,8 +197,18 @@ class BottomButtons extends StatelessWidget {
                         ListTile(
                           leading: Icon(Icons.perm_media),
                           title: Text("Aus Galerie hochladen"),
-                          onTap: () async {
-                            Navigator.pop(context);
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => UploadImageScreen(
+                                  existingFilename: page.fileName,
+                                  replaceImage: true,
+                                  existingId: page.id,
+                                  existingPage: page.siteNumber,
+                                ),
+                              ),
+                            );
                           },
                         ),
                         ListTile(

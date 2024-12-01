@@ -334,23 +334,6 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                     showText,
                                     selectedLanguage,
                                     existingPage!);
-                                // final apiService = ApiService();
-                                // final now = DateTime.now();
-                                // final formatter =
-                                //     DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
-                                // await apiService.sendDataToServer(
-                                //   existingFilename!,
-                                //   showText,
-                                //   language: selectedLanguage,
-                                //   scanDate: formatter.format(now),
-                                //   imageUrl: existingImage,
-                                // );
-                                // print("Dokument gespeichert!");
-
-                                // print('Daten erfolgreich an Solr gesendet.');
-                                // Navigator.pop(context);
-                                // print("Speichern Button gedrückt");
                               },
                               icon: const Icon(Icons.save),
                               label: Text("Speichern"),
@@ -365,23 +348,6 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                         showText,
                                         selectedLanguage,
                                         existingPage!);
-                                    // final apiService = ApiService();
-                                    // final now = DateTime.now();
-                                    // final formatter =
-                                    //     DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
-                                    // await apiService.sendDataToServer(
-                                    //   existingFilename!,
-                                    //   showText,
-                                    //   language: selectedLanguage,
-                                    //   scanDate: formatter.format(now),
-                                    //   imageUrl: existingImage,
-                                    // );
-                                    // print("Dokument gespeichert!");
-
-                                    // print('Daten erfolgreich an Solr gesendet.');
-                                    // Navigator.pop(context);
-                                    // print("Speichern Button gedrückt");
                                   },
                                   icon: const Icon(Icons.save),
                                   label: Text("Speichern"),
