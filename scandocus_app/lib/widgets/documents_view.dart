@@ -9,6 +9,9 @@ import 'package:scandocus_app/models/document.dart';
 import '../screens/doc_page_overview.dart';
 import '../services/api_service.dart';
 
+import 'package:provider/provider.dart';
+import '../utils/document_provider.dart';
+
 class DocumentsView extends StatefulWidget {
   const DocumentsView({super.key});
 
@@ -17,7 +20,7 @@ class DocumentsView extends StatefulWidget {
 }
 
 class _DocumentsViewState extends State<DocumentsView> {
-  List<Document> documents = [];
+  // List<Document> documents = [];
   bool isLoading = true;
 
   @override
@@ -29,37 +32,17 @@ class _DocumentsViewState extends State<DocumentsView> {
   Future<void> loadDocuments() async {
     try {
       final fetchedDocuments = await ApiService().getSolrData();
+      if (mounted) {
+        Provider.of<DocumentProvider>(context, listen: false)
+            .setDocuments(fetchedDocuments);
+      }
       setState(() {
-        documents = fetchedDocuments;
         isLoading = false;
       });
     } catch (e) {
       print("Fehler beim Laden der Dokumente: $e");
     }
     print("DOKUMENTE:");
-    print(documents);
-  }
-
-  Future<void> navigateToOverview(
-      BuildContext context, List<Document> documents, String fileName) async {
-    final updatedDocuments = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DocumentPageOvereview(
-          documents: documents,
-          fileName: fileName,
-        ),
-      ),
-    );
-
-    // Falls die Übersicht aktualisierte Daten zurückgibt, lade neu
-    if (updatedDocuments != null) {
-      setState(() {
-        documents = updatedDocuments;
-      });
-    } else {
-      loadDocuments(); // Alternativ: Komplettes Neuladen
-    }
   }
 
   String formatScanDate(String isoDate) {
@@ -171,6 +154,9 @@ class _DocumentsViewState extends State<DocumentsView> {
 
   @override
   Widget build(BuildContext context) {
+    // Zugriff auf den Provider
+    final documentProvider = Provider.of<DocumentProvider>(context);
+    final documents = documentProvider.documents;
     final apiService = ApiService();
     // Gruppiere Dokumente nach `fileName` und zähle die Seiten
     final groupedDocuments = <String, List<Document>>{};
@@ -235,10 +221,12 @@ class _DocumentsViewState extends State<DocumentsView> {
                       final exampleDoc = docInfo["exampleDoc"] as Document;
                       final relatedDocs = groupedDocuments[
                           fileName]!; // Liste der zugehörigen Dokumente
-                      // final String imageUrl =
-                      //     'http://192.168.178.193:3000${exampleDoc.image}'; // Bild-URL
                       final String imageUrl =
-                          'http://192.168.2.171:3000${exampleDoc.image}';
+                          'http://192.168.178.193:3000${exampleDoc.image}'; // Bild-URL
+                      // final String imageUrl =
+                      //     'http://192.168.2.171:3000${exampleDoc.image}';
+                      // final String imageUrl =
+                      //     'http://192.168.178.49:3000${exampleDoc.image}';
 
                       return Dismissible(
                         key: Key(exampleDoc.id),
@@ -291,18 +279,15 @@ class _DocumentsViewState extends State<DocumentsView> {
                               color: Colors.white, size: 32),
                         ),
                         child: GestureDetector(
-                          onTap: () {
-                            navigateToOverview(context, relatedDocs, fileName);
-                            // Navigiere zur DocumentOverviewPage und übergebe die Dokumente
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => DocumentPageOvereview(
-                            //       documents: relatedDocs,
-                            //       fileName: fileName,
-                            //     ),
-                            //   ),
-                            // );
+                          onTap: () async {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DocumentPageOvereview(
+                                  fileName: fileName,
+                                ),
+                              ),
+                            );
                           },
                           child: Card(
                             elevation: 4.0,

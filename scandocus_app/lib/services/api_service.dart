@@ -5,8 +5,9 @@ import '../models/document.dart';
 
 class ApiService {
   //IP from my computer for testing connection from physical device
-  // final String baseUrl = "http://192.168.178.193:3000";
-  final String baseUrl = "http://192.168.2.171:3000";
+  final String baseUrl = "http://192.168.178.193:3000";
+  // final String baseUrl = "http://192.168.2.171:3000";
+  // final String baseUrl = 'http://192.168.178.49:3000'; //eltern wlan
 
   Future<void> testConnection() async {
     try {
@@ -27,12 +28,15 @@ class ApiService {
       {String? language,
       String? scanDate,
       String? imageUrl,
-      int? pageNumber}) async {
-    // final url =
-    //     Uri.parse('http://192.168.178.193:3000/api/solr'); // Node.js-Server-URL
-    final url = Uri.parse('http://192.168.2.171:3000/api/solr');
+      int? pageNumber,
+      String? id}) async {
+    final url =
+        Uri.parse('http://192.168.178.193:3000/api/solr'); // Node.js-Server-URL
+    // final url = Uri.parse('http://192.168.2.171:3000/api/solr');
+    // final url = Uri.parse('http://192.168.178.49:3000/api/solr');
 
     final body = {
+      'id': id,
       'fileName': fileName,
       'docText': docText,
       'language':
@@ -83,8 +87,9 @@ class ApiService {
   }
 
   Future<String> uploadImage(File image) async {
-    // final uri = Uri.parse('http://192.168.178.193:3000/upload');
-    final uri = Uri.parse('http://192.168.2.171:3000/upload');
+    final uri = Uri.parse('http://192.168.178.193:3000/upload');
+    // final uri = Uri.parse('http://192.168.2.171:3000/upload');
+    // final uri = Uri.parse('http://192.168.178.49:3000/upload');
     final request = http.MultipartRequest('POST', uri);
 
     // Bild als Teil der Anfrage hinzufügen
@@ -103,9 +108,11 @@ class ApiService {
 
   // Future<void>, um die Funktion asynchron zu gestalten
   Future<void> deleteManyDocsFromSolr(String fileName) async {
-    // final url = Uri.parse(
-    //     'http://192.168.178.193:3000/api/deleteDocsByFileName'); // Node.js-Server-URL
-    final url = Uri.parse('http://192.168.2.171:3000/api/deleteDocsByFileName');
+    final url = Uri.parse(
+        'http://192.168.178.193:3000/api/deleteDocsByFileName'); // Node.js-Server-URL
+    // final url = Uri.parse('http://192.168.2.171:3000/api/deleteDocsByFileName');
+    // final url =
+    //     Uri.parse('http://192.168.178.49:3000/api/deleteDocsByFileName');
 
     final body = {
       'fileName': fileName,
@@ -131,9 +138,10 @@ class ApiService {
   }
 
   Future<void> deleteDocFromSolr(String id, String fileName) async {
-    // final url = Uri.parse(
-    //     'http://192.168.178.193:3000/api/deleteDocById'); // Node.js-Server-URL
-    final url = Uri.parse('http://192.168.2.171:3000/api/deleteDocById');
+    final url = Uri.parse(
+        'http://192.168.178.193:3000/api/deleteDocById'); // Node.js-Server-URL
+    // final url = Uri.parse('http://192.168.2.171:3000/api/deleteDocById');
+    // final url = Uri.parse('http://192.168.178.49:3000/api/deleteDocById');
 
     final body = {
       'id': id,

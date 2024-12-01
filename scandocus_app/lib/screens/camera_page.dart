@@ -11,8 +11,19 @@ import '../screens/image_preview.dart';
 // A screen that allows users to take a picture using a given camera.
 class TakePictureScreen extends StatefulWidget {
   // final List<CameraDescription> cameras;
+  final String? existingFilename;
+  final int? newPage;
+  final bool? replaceImage;
+  final String? existingId;
+  final int? existingPage;
 
-  const TakePictureScreen({super.key});
+  const TakePictureScreen(
+      {super.key,
+      this.existingFilename,
+      this.newPage,
+      this.replaceImage,
+      this.existingId,
+      this.existingPage});
 
   // final CameraDescription camera;
 
@@ -25,6 +36,11 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
   File? selectedImage; // Ausgewähltes Bild als Datei
+  late String? existingFilename;
+  late int? newPage;
+  late bool? replaceImage;
+  late String? existingId;
+  late int? existingPage;
 
   @override
   void initState() {
@@ -34,6 +50,11 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     final now = DateTime.now();
     final formattedDate = DateFormat('yyyy-MM-dd_HH-mm-ss').format(now);
     final fileName = "Dokument_$formattedDate";
+    existingFilename = widget.existingFilename;
+    newPage = widget.newPage;
+    replaceImage = widget.replaceImage;
+    existingId = widget.existingId;
+    existingPage = widget.existingPage;
 
     currentSession = DocumentSession(fileName: fileName);
   }
@@ -144,7 +165,14 @@ class TakePictureScreenState extends State<TakePictureScreen> {
               await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => DisplayPictureScreen(
-                      capturedImage: image.path, session: currentSession),
+                    capturedImage: image.path,
+                    session: currentSession,
+                    existingFilename: existingFilename,
+                    newPage: newPage,
+                    replaceImage: replaceImage,
+                    existingId: existingId,
+                    existingPage: existingPage,
+                  ),
                 ),
               );
             } catch (e) {

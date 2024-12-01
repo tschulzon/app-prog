@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
 import '../models/document.dart';
 import '../screens/ocr_page.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../screens/camera_page.dart';
 import '../services/api_service.dart';
+import '../utils/document_provider.dart';
 
 class Detailpage extends StatefulWidget {
   final Document document;
-  final List<Document> documents;
+  // final List<Document> documents;
 
-  const Detailpage(
-      {super.key, required this.document, required this.documents});
+  const Detailpage({super.key, required this.document});
 
   @override
   State<Detailpage> createState() => _DetailpageState();
@@ -20,78 +20,94 @@ class Detailpage extends StatefulWidget {
 
 class _DetailpageState extends State<Detailpage> {
   late Document doc;
-  // final String serverUrl = 'http://192.168.178.193:3000';
-  final String serverUrl = 'http://192.168.2.171:3000';
+  final String serverUrl = 'http://192.168.178.193:3000';
+  // final String serverUrl = 'http://192.168.2.171:3000';
+  // final String serverUrl = 'http://192.168.178.49:3000'; //eltern wlan
 
   @override
   void initState() {
     super.initState();
-    doc = widget.document;
+
+    // Lade das Dokument aus dem Provider, falls es aktualisiert wurde
+    final documentProvider =
+        Provider.of<DocumentProvider>(context, listen: false);
+    doc = documentProvider.documents.firstWhere(
+      (d) => d.id == widget.document.id,
+      orElse: () => widget.document, // Falls das Dokument nicht gefunden wird
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Seite ${widget.document.siteNumber}'),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Column(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 3,
-                          spreadRadius: 3,
+    return Consumer<DocumentProvider>(
+      builder: (context, documentProvider, child) {
+        //Aktuellste Version von Dokument holen
+        final currentDoc = documentProvider.documents.firstWhere(
+          (d) => d.id == doc.id,
+          orElse: () => doc, // Fallback auf lokale Kopie
+        );
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Seite ${currentDoc.siteNumber}'),
+          ),
+          body: SingleChildScrollView(
+            child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 3,
+                              spreadRadius: 3,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: doc.image.isNotEmpty
-                          ? Image.network(
-                              '$serverUrl${doc.image}',
-                              errorBuilder: (context, error, stackTrace) {
-                                // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
-                                return const Icon(Icons.error);
-                              },
-                            )
-                          : const Icon(Icons.image_not_supported),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Text("Erkannter Text: "),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        doc.docText.join('\n'),
-                        textAlign: TextAlign.center,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: doc.image.isNotEmpty
+                              ? Image.network(
+                                  '$serverUrl${currentDoc.image}',
+                                  errorBuilder: (context, error, stackTrace) {
+                                    // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
+                                    return const Icon(Icons.error);
+                                  },
+                                )
+                              : const Icon(Icons.image_not_supported),
+                        ),
                       ),
-                    ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Text("Erkannter Text: "),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            currentDoc.docText.join('\n'),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            )),
-      ),
-      bottomNavigationBar:
-          BottomButtons(page: widget.document, documents: widget.documents),
+                )),
+          ),
+          bottomNavigationBar: BottomButtons(page: currentDoc),
+        );
+      },
     );
   }
 }
 
 class BottomButtons extends StatelessWidget {
-  const BottomButtons({super.key, required this.page, required this.documents});
-  final List<Document> documents;
+  const BottomButtons({super.key, required this.page});
+  // final List<Document> documents;
 
   final Document page;
 
@@ -124,8 +140,11 @@ class BottomButtons extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        OcrProcessView(takenPicture: page.image),
+                    builder: (context) => OcrProcessView(
+                        existingImage: page.image,
+                        existingFilename: page.fileName,
+                        existingId: page.id,
+                        existingPage: page.siteNumber),
                   ),
                 );
               },
@@ -161,19 +180,23 @@ class BottomButtons extends StatelessWidget {
                           leading: Icon(Icons.camera),
                           title: Text("Foto aufnehmen"),
                           onTap: () {
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => TakePictureScreen(),
-                            //   ),
-                            // );
-                            // Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TakePictureScreen(
+                                  existingFilename: page.fileName,
+                                  replaceImage: true,
+                                  existingId: page.id,
+                                  existingPage: page.siteNumber,
+                                ),
+                              ),
+                            );
                           },
                         ),
                         ListTile(
                           leading: Icon(Icons.perm_media),
                           title: Text("Aus Galerie hochladen"),
-                          onTap: () {
+                          onTap: () async {
                             Navigator.pop(context);
                           },
                         ),
@@ -206,10 +229,16 @@ class BottomButtons extends StatelessWidget {
             child: IconButton(
               tooltip: 'Seite löschen',
               icon: const Icon(Icons.delete),
-              onPressed: () {
-                apiService.deleteDocFromSolr(page.id, page.fileName);
-                // Entferne die Seite aus der Liste der Seiten des Dokuments
-                documents.removeWhere((page) => page.id == this.page.id);
+              onPressed: () async {
+                final documentProvider =
+                    Provider.of<DocumentProvider>(context, listen: false);
+
+                await apiService.deleteDocFromSolr(page.id, page.fileName);
+
+                documentProvider.removeDocument(page.id);
+
+                // Dokumentliste aktualisieren
+                await documentProvider.fetchDocuments();
 
                 final SnackBar snackBar = SnackBar(
                   content: const Text('Dokument wurde gelöscht!'),
@@ -219,7 +248,7 @@ class BottomButtons extends StatelessWidget {
                 // and use it to show a SnackBar.
                 ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
-                Navigator.pop(context, documents);
+                Navigator.pop(context);
               },
             ),
           ),

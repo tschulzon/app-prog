@@ -11,7 +11,10 @@ import '../screens/camera_preview_overview.dart';
 
 // A screen that allows users to take a picture using a given camera.
 class UploadImageScreen extends StatefulWidget {
-  const UploadImageScreen({super.key});
+  final String? existingFilename;
+  final int? newPage;
+
+  const UploadImageScreen({super.key, this.existingFilename, this.newPage});
 
   @override
   UploadImageScreenState createState() => UploadImageScreenState();
@@ -21,6 +24,8 @@ class UploadImageScreenState extends State<UploadImageScreen> {
   DocumentSession currentSession = DocumentSession(fileName: "Neues Dokument");
   File? selectedImage;
   final ImagePicker picker = ImagePicker();
+  late String? existingFilename;
+  late int? newPage;
 
   @override
   void initState() {
@@ -31,6 +36,8 @@ class UploadImageScreenState extends State<UploadImageScreen> {
     final fileName = "Dokument_$formattedDate";
 
     currentSession = DocumentSession(fileName: fileName);
+    existingFilename = widget.existingFilename;
+    newPage = widget.newPage;
   }
 
   // Methode zum Auswählen eines Bildes
@@ -47,7 +54,11 @@ class UploadImageScreenState extends State<UploadImageScreen> {
           await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => DisplayPictureScreen(
-                  capturedImage: image.path, session: currentSession),
+                capturedImage: image.path,
+                session: currentSession,
+                existingFilename: existingFilename,
+                newPage: newPage,
+              ),
             ),
           );
         }

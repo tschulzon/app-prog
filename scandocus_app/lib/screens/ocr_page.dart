@@ -1,11 +1,16 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
+import 'package:provider/provider.dart';
+import 'package:scandocus_app/screens/doc_page_overview.dart';
 import 'dart:io';
 
+import '../utils/document_provider.dart';
 import '../widgets/language_list.dart';
 import '../widgets/progress_bar.dart';
 import '../services/api_service.dart';
@@ -15,12 +20,22 @@ class OcrProcessView extends StatefulWidget {
 
   final File? selectedImage; // Ausgewähltes Bild als Datei
   final String? takenPicture;
+  final String? existingImage;
+  final String? existingFilename;
+  final String? existingId;
+  final int? existingPage;
+  final bool? replaceImage;
 
   const OcrProcessView(
       {super.key,
       this.selectedImage,
       // required this.cameras,
-      this.takenPicture});
+      this.takenPicture,
+      this.existingImage,
+      this.existingFilename,
+      this.existingId,
+      this.existingPage,
+      this.replaceImage});
 
   @override
   State<OcrProcessView> createState() => _OcrProcessViewState();
@@ -29,6 +44,11 @@ class OcrProcessView extends StatefulWidget {
 class _OcrProcessViewState extends State<OcrProcessView> {
   late File? selectedImage; // Ausgewähltes Bild als Datei
   late String? takenPicture;
+  late String? existingFilename;
+  late String? existingImage;
+  late String? existingId;
+  late int? existingPage;
+  late bool? replaceImage;
   var showText = "Hier wird Text angezeigt";
   String selectedLanguage = "eng";
 
@@ -43,6 +63,74 @@ class _OcrProcessViewState extends State<OcrProcessView> {
         widget.selectedImage; // Das Bild aus dem Widget-Parameter setzen
 
     takenPicture = widget.takenPicture;
+    existingImage = widget.existingImage;
+    existingId = widget.existingId;
+    existingPage = widget.existingPage;
+    existingFilename = widget.existingFilename;
+    replaceImage = widget.replaceImage;
+  }
+
+  Future<void> updateDocument(String image, String id, String filename,
+      String text, String language, int page) async {
+    final apiService = ApiService();
+    final now = DateTime.now();
+    final formatter = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    final String imagePath;
+    if (takenPicture != null) {
+      imagePath = await apiService.uploadImage(File(image));
+    } else {
+      imagePath = image;
+    }
+
+    await apiService.sendDataToServer(
+      filename,
+      text,
+      language: language,
+      scanDate: formatter.format(now),
+      imageUrl: imagePath,
+      id: id,
+      pageNumber: page,
+    );
+    print("Dokument gespeichert!");
+
+    print('Daten erfolgreich an Solr gesendet.');
+    // Dokumentliste aktualisieren
+    final documentProvider =
+        Provider.of<DocumentProvider>(context, listen: false);
+    await documentProvider.fetchDocuments();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+          builder: (context) =>
+              DocumentPageOvereview(fileName: existingFilename!)),
+      (route) => route.isFirst, // Behält nur die erste Seite im Stack
+    );
+    print("Speichern Button gedrückt");
+  }
+
+  Future<void> saveImageLocal(String imagePath) async {
+    final File imageFile = File(imagePath);
+
+    // Bild lokal speichern
+    final directory =
+        await getApplicationDocumentsDirectory(); //Pfad vom Anwenderverzeichnis holen
+    // Erstelle den Ordnerpfad
+    final folderPath = '${directory.path}/Scan2Doc';
+
+    // Überprüfe, ob der Ordner existiert, und erstelle ihn, falls nicht
+    final folder = Directory(folderPath);
+    if (!await folder.exists()) {
+      await folder.create(recursive: true); // Ordner erstellen
+      print('Ordner erstellt: $folderPath');
+    } else {
+      print('Ordner existiert bereits: $folderPath');
+    }
+
+    final fileName = 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final filePath = '$folderPath/$fileName';
+    await imageFile.copy(filePath);
+
+    print('Bild erfolgreich gespeichert: $filePath');
   }
 
   void _showLanguageDialog(BuildContext context) {
@@ -77,6 +165,9 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     } else if (takenPicture != null) {
       imagePath =
           takenPicture!; // Wenn `takenPicture` nicht null ist, verwenden wir diesen Pfad
+    } else if (existingImage != null) {
+      imagePath =
+          await downloadImage('http://192.168.178.193:3000${existingImage!}');
     } else {
       print("Kein Bild zum Extrahieren vorhanden!");
       setState(() {
@@ -108,56 +199,48 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     }
   }
 
-  // Future<void> saveImageAndSendData() async {
-  //   // Stelle sicher, dass ein Bild vorhanden ist
-  //   if (selectedImage == null && takenPicture == null) {
-  //     print('Kein Bild zum Speichern und Senden vorhanden.');
-  //     return;
-  //   }
+  //Existierendes Bild herunterladen für Tesserect ansonsten kann es nicht nochmal gescannt werden
+  Future<String> downloadImage(String url) async {
+    try {
+      // Lade das Bild herunter
+      final response = await http.get(Uri.parse(url));
 
-  //   try {
-  //     // Bildquelle bestimmen (Galerie oder Kamera)
-  //     final File imageFile = selectedImage ?? File(takenPicture!);
+      if (response.statusCode == 200) {
+        // Speichere die Datei im temporären Verzeichnis
+        final tempDir = await getTemporaryDirectory();
+        final filePath = '${tempDir.path}/downloaded_image.jpg';
+        final file = File(filePath);
 
-  //     // Bild lokal speichern
-  //     final directory =
-  //         await getApplicationDocumentsDirectory(); //Pfad vom Anwenderverzeichnis holen
-  //     // Erstelle den Ordnerpfad
-  //     final folderPath = '${directory.path}/Scan2Doc';
+        // Schreibe die Bilddaten in die Datei
+        await file.writeAsBytes(response.bodyBytes);
 
-  //     // Überprüfe, ob der Ordner existiert, und erstelle ihn, falls nicht
-  //     final folder = Directory(folderPath);
-  //     if (!await folder.exists()) {
-  //       await folder.create(recursive: true); // Ordner erstellen
-  //       print('Ordner erstellt: $folderPath');
-  //     } else {
-  //       print('Ordner existiert bereits: $folderPath');
-  //     }
-
-  //     final fileName = 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-  //     final filePath = '$folderPath/$fileName';
-  //     await imageFile.copy(filePath);
-
-  //     print('Bild erfolgreich gespeichert: $filePath');
-
-  //     // Textdaten und Bild-URL an Solr senden
-  //     final apiService = ApiService(); // Dein API-Service
-  //     await apiService.sendDataToServer(
-  //       'OCR-ScanTest1', // Beispiel Dateiname
-  //       showText, // Erkannter Text aus OCR
-  //       language: selectedLanguage,
-  //       scanDate: "2024-11-24T10:00:00Z",
-  //       imageUrl: filePath, // Lokaler Pfad des Bildes
-  //     );
-
-  //     print('Daten erfolgreich an Solr gesendet.');
-  //   } catch (e) {
-  //     print('Fehler beim Speichern und Senden: $e');
-  //   }
-  // }
+        return file.path; // Gibt den lokalen Pfad zurück
+      } else {
+        throw Exception(
+            'Fehler beim Herunterladen des Bildes: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Fehler beim Herunterladen des Bildes: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    String? imageUrl;
+    bool imageExists = false;
+    bool idExists = false;
+    int? samePage;
+
+    // Bedingungen prüfen und Variablen setzen
+    if (existingImage != null && existingImage!.isNotEmpty) {
+      imageUrl = 'http://192.168.178.193:3000${existingImage!}'; // Bild-URL
+      imageExists = true;
+    }
+
+    if (replaceImage != null) {
+      idExists = true;
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text("OCR-Verarbeitung"), leading: null),
       body: SingleChildScrollView(
@@ -166,13 +249,31 @@ class _OcrProcessViewState extends State<OcrProcessView> {
           child: Center(
             child: Column(
               children: [
-                selectedImage != null && takenPicture == null
-                    ? Image.file(
-                        selectedImage!) // Das ausgewählte Bild anzeigen
-                    : (selectedImage == null && takenPicture != null
-                        ? Image.file(File(
-                            takenPicture!)) // Das aufgenommene Bild anzeigen
-                        : Text("Kein Bild ausgewählt!")),
+                if (selectedImage != null &&
+                    takenPicture == null &&
+                    existingImage == null)
+                  // Lokale Datei anzeigen, wenn ein ausgewähltes Bild vorhanden ist
+                  Image.file(selectedImage!)
+                else if (takenPicture != null &&
+                    selectedImage == null &&
+                    existingImage == null)
+                  // Lokale Datei von der aufgenommenen Bild-URL anzeigen
+                  Image.file(File(takenPicture!))
+                else if (existingImage != null &&
+                    takenPicture == null &&
+                    selectedImage == null)
+
+                  // Falls weder ein Bild noch ein Pfad angegeben ist, versuche, das Bild über eine URL anzuzeigen
+                  Image.network(
+                    imageUrl!,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fehlerbehandlung: Zeige ein Icon, wenn das Bild nicht geladen werden kann
+                      return const Icon(Icons.error);
+                    },
+                  )
+                else
+                  // Wenn keine Bedingung zutrifft, zeige ein Icon für nicht unterstützte Inhalte
+                  const Icon(Icons.image_not_supported),
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Row(
@@ -223,26 +324,79 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                           ),
                         ),
                       ),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          // Navigator.pushReplacement(
-                          //   context,
-                          //   MaterialPageRoute(
-                          //     builder: (context) => HomePage(cameras: widget.cameras),
-                          //   ),
-                          // );
-                          // Dynamische Prüfungen und Fallback-Logik
-                          // await apiService.testConnection();
-                          // saveImageAndSendData();
-                          Navigator.pop(context, {
-                            'scannedText': showText,
-                            'selectedLanguage': selectedLanguage,
-                          }); // Text zurückgeben
-                          print("Verwenden Button gedrückt");
-                        },
-                        icon: const Icon(Icons.check),
-                        label: Text("Verwenden"),
-                      ),
+                      imageExists
+                          ? ElevatedButton.icon(
+                              onPressed: () {
+                                updateDocument(
+                                    existingImage!,
+                                    existingId!,
+                                    existingFilename!,
+                                    showText,
+                                    selectedLanguage,
+                                    existingPage!);
+                                // final apiService = ApiService();
+                                // final now = DateTime.now();
+                                // final formatter =
+                                //     DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+                                // await apiService.sendDataToServer(
+                                //   existingFilename!,
+                                //   showText,
+                                //   language: selectedLanguage,
+                                //   scanDate: formatter.format(now),
+                                //   imageUrl: existingImage,
+                                // );
+                                // print("Dokument gespeichert!");
+
+                                // print('Daten erfolgreich an Solr gesendet.');
+                                // Navigator.pop(context);
+                                // print("Speichern Button gedrückt");
+                              },
+                              icon: const Icon(Icons.save),
+                              label: Text("Speichern"),
+                            )
+                          : idExists
+                              ? ElevatedButton.icon(
+                                  onPressed: () {
+                                    updateDocument(
+                                        takenPicture!,
+                                        existingId!,
+                                        existingFilename!,
+                                        showText,
+                                        selectedLanguage,
+                                        existingPage!);
+                                    // final apiService = ApiService();
+                                    // final now = DateTime.now();
+                                    // final formatter =
+                                    //     DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+                                    // await apiService.sendDataToServer(
+                                    //   existingFilename!,
+                                    //   showText,
+                                    //   language: selectedLanguage,
+                                    //   scanDate: formatter.format(now),
+                                    //   imageUrl: existingImage,
+                                    // );
+                                    // print("Dokument gespeichert!");
+
+                                    // print('Daten erfolgreich an Solr gesendet.');
+                                    // Navigator.pop(context);
+                                    // print("Speichern Button gedrückt");
+                                  },
+                                  icon: const Icon(Icons.save),
+                                  label: Text("Speichern"),
+                                )
+                              : ElevatedButton.icon(
+                                  onPressed: () async {
+                                    Navigator.pop(context, {
+                                      'scannedText': showText,
+                                      'selectedLanguage': selectedLanguage,
+                                    }); // Text zurückgeben
+                                    print("Verwenden Button gedrückt");
+                                  },
+                                  icon: const Icon(Icons.check),
+                                  label: Text("Verwenden"),
+                                ),
                     ],
                   ),
                 ),

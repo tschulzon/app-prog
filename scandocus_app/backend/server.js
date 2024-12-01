@@ -52,7 +52,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // POST-Route für /api/solr
 app.post('/api/solr', async (req, res) => {
-  const { fileName, images, docText, language, scanDate, siteNumber } = req.body;
+  const { fileName, images, docText, language, scanDate, siteNumber, id } = req.body;
 
   // Sicherheitsüberprüfung
   if (!fileName || !docText) {
@@ -65,7 +65,7 @@ app.post('/api/solr', async (req, res) => {
       'http://localhost:8983/solr/scan2doc/update?commit=true',  // Solr-Core-URL
       [
         {
-          id: `${fileName}-${Date.now()}`, // Generiere eine eindeutige ID
+          id: id ?? `${fileName}-${Date.now()}`, // Generiere eine eindeutige ID
           fileName: fileName,
           docText: docText,
           language: language || 'unknown',  // Falls keine Sprache übergeben wurde, 'unknown' verwenden

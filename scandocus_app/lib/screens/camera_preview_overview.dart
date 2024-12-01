@@ -13,8 +13,11 @@ import '../screens/home_page.dart';
 
 class DocumentOverview extends StatefulWidget {
   final DocumentSession session;
+  final String? existingFilename;
+  final int? newPage;
 
-  const DocumentOverview({super.key, required this.session});
+  const DocumentOverview(
+      {super.key, required this.session, this.existingFilename, this.newPage});
 
   @override
   State<DocumentOverview> createState() => _DocumentOverviewState();
@@ -22,12 +25,24 @@ class DocumentOverview extends StatefulWidget {
 
 class _DocumentOverviewState extends State<DocumentOverview> {
   late TextEditingController _fileNameController;
+  late String? existingFilename;
+  late int? newPage;
 
   @override
   void initState() {
     super.initState();
     // Initialisiere den Controller mit dem Standardnamen
-    _fileNameController = TextEditingController(text: widget.session.fileName);
+    // _fileNameController = TextEditingController(text: widget.session.fileName);
+    // Initialisiere den Controller mit dem Dokumentnamen.
+    if (widget.existingFilename != null) {
+      _fileNameController =
+          TextEditingController(text: widget.existingFilename);
+    } else {
+      _fileNameController =
+          TextEditingController(text: widget.session.fileName);
+    }
+    existingFilename = widget.existingFilename;
+    newPage = widget.newPage;
   }
 
   @override
@@ -46,15 +61,17 @@ class _DocumentOverviewState extends State<DocumentOverview> {
       for (var page in widget.session.pages) {
         // Bild hochladen und Pfad erhalten
         final imagePath = await apiService.uploadImage(File(page.imagePath));
+        String currentFilename = existingFilename ?? widget.session.fileName;
+        int currentPage = newPage ?? page.pageNumber;
 
         await apiService.sendDataToServer(
-          widget.session.fileName,
+          currentFilename,
           page.scannedText, // Text aus OCR
           language: page.language,
           // scanDate: page.captureDate.toIso8601String(),
           scanDate: page.captureDate,
           imageUrl: imagePath,
-          pageNumber: page.pageNumber,
+          pageNumber: currentPage,
         );
       }
       print("Dokument gespeichert!");
@@ -113,13 +130,16 @@ class _DocumentOverviewState extends State<DocumentOverview> {
                 labelText: "Dokumentname",
                 prefixIcon: Icon(Icons.edit),
               ),
+              enabled: existingFilename == null,
               onChanged: (value) {
-                // Aktualisiere den Dokumentnamen, wenn der Benutzer etwas eingibt
-                setState(() {
-                  widget.session.fileName = _fileNameController.text;
-                });
-                print("NEUER NAME?");
-                print(widget.session.fileName);
+                if (existingFilename == null) {
+                  // Aktualisiere den Dokumentnamen, wenn der Benutzer etwas eingibt
+                  setState(() {
+                    widget.session.fileName = _fileNameController.text;
+                  });
+                  print("NEUER NAME?");
+                  print(widget.session.fileName);
+                }
               },
             ),
           ),

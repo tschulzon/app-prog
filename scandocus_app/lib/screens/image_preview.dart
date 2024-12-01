@@ -10,12 +10,22 @@ import '../screens/camera_preview_overview.dart';
 // A widget that displays the picture taken by the user.
 class DisplayPictureScreen extends StatelessWidget {
   final String capturedImage;
-  final DocumentSession session;
+  final DocumentSession? session;
+  final String? existingFilename;
+  final int? newPage;
+  final bool? replaceImage;
+  final String? existingId;
+  final int? existingPage;
 
   const DisplayPictureScreen({
     super.key,
     required this.capturedImage,
-    required this.session,
+    this.session,
+    this.existingFilename,
+    this.newPage,
+    this.replaceImage,
+    this.existingId,
+    this.existingPage,
   });
 
   @override
@@ -91,18 +101,35 @@ class DisplayPictureScreen extends StatelessWidget {
                         // Format: YYYY-MM-DDTHH:mm:ss.SSSZ
                         final formatter =
                             DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                        session.addPage(DocumentPage(
-                          imagePath: capturedImage,
-                          captureDate: formatter.format(now),
-                          pageNumber: session.pages.length + 1,
-                        ));
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                DocumentOverview(session: session),
-                          ),
-                        );
+                        if (replaceImage != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OcrProcessView(
+                                  takenPicture: capturedImage,
+                                  existingFilename: existingFilename,
+                                  existingId: existingId,
+                                  replaceImage: replaceImage,
+                                  existingPage: existingPage),
+                            ),
+                          );
+                        } else {
+                          session!.addPage(DocumentPage(
+                            imagePath: capturedImage,
+                            captureDate: formatter.format(now),
+                            pageNumber: session!.pages.length + 1,
+                          ));
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DocumentOverview(
+                                  session: session!,
+                                  existingFilename: existingFilename,
+                                  newPage: newPage),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ),
@@ -126,10 +153,10 @@ class DisplayPictureScreen extends StatelessWidget {
                         // Format: YYYY-MM-DDTHH:mm:ss.SSSZ
                         final formatter =
                             DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                        session.addPage(DocumentPage(
+                        session!.addPage(DocumentPage(
                           imagePath: capturedImage,
                           captureDate: formatter.format(now),
-                          pageNumber: session.pages.length + 1,
+                          pageNumber: session!.pages.length + 1,
                         ));
                         Navigator.pop(context);
                       },
