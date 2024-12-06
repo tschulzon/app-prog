@@ -52,7 +52,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // POST-Route für /api/solr
 app.post('/api/solr', async (req, res) => {
-  const { fileName, images, docText, language, scanDate, siteNumber, id } = req.body;
+  const { fileName, images, docText, language, scanDate, siteNumber, id, scanTime } = req.body;
 
   // Sicherheitsüberprüfung
   if (!fileName || !docText) {
@@ -70,6 +70,7 @@ app.post('/api/solr', async (req, res) => {
           docText: docText,
           language: language || 'unknown',  // Falls keine Sprache übergeben wurde, 'unknown' verwenden
           scanDate: moment().tz('Europe/Berlin').format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z',
+          scanTime: scanTime,
           images: images, // Das Base64-kodierte Bild
           siteNumber: siteNumber,
         }
@@ -95,17 +96,60 @@ app.post('/api/solr', async (req, res) => {
 });
 
 app.get('/search', async (req, res) => {
-  const { query, start = 0, rows = 50 } = req.query; // Pagination und Suchparameter
+  const { query, start = 0, rows = 50, startDate, endDate, startTime, endTime, startPage, endPage, language } = req.query; // Pagination und Suchparameter
+  
+  // Solr-Query-Filter aufbauen
+  const filters = [];
+  if (startDate && endDate) {
+    filters.push(`scanDate:[${startDate} TO ${endDate}]`);
+  }
+  if (startTime && endTime) {
+    filters.push(`scanTime:[${startTime} TO ${endTime}]`);
+  }
+  if (startPage && endPage) {
+    filters.push(`siteNumber:[${startPage} TO ${endPage}]`);
+  }
+  if (language) {
+    filters.push(`language:${language}`);
+  }
+
+  const filterQuery = filters.length > 0 ? `&fq=${filters.join('&fq=')}` : '';
   const solrQuery = query ? encodeURIComponent(query) : '*:*';
 
   try {
     const solrResponse = await axios.get(
-      `http://localhost:8983/solr/scan2doc/select?indent=true&q=${solrQuery}&start=${start}&rows=${rows}&fl=id,fileName,scanDate,scanTime,siteNumber,language,images,docText`
+      `http://localhost:8983/solr/scan2doc/select?indent=true&q=${solrQuery}${filterQuery}&start=${start}&rows=${rows}&fl=id,fileName,scanDate,scanTime,siteNumber,language,images,docText`
     );
     res.json(solrResponse.data.response); // Nur relevante Daten senden
+    console.log(solrResponse.data.response);
   } catch (error) {
     console.error('Error querying Solr:', error);
     res.status(500).send('Error querying Solr');
+  }
+});
+
+app.get('/searchtext', async (req, res) => {
+  const searchTerm = req.query.query;
+
+  console.log("SEARCHTERM");
+  console.log(searchTerm);
+
+  try {
+    // Solr-URL für die Abfrage (anpassen, je nach deiner Solr-Instanz)
+    const solrResponse = await axios.get(`http://localhost:8983/solr/scan2doc/select`, {
+      params: {
+        q: `(fileName:*${searchTerm}* OR docText:*${searchTerm}*)`,
+        wt: 'json'
+      }
+    });
+
+    console.log(solrResponse);
+
+    // Sende die Solr-Ergebnisse an Flutter zurück
+    res.json(solrResponse.data.response.docs);
+  } catch (error) {
+    console.error('Fehler bei der Solr-Abfrage:', error);
+    res.status(500).send('Fehler bei der Abfrage an Solr');
   }
 });
 
@@ -210,32 +254,35 @@ app.delete('/api/deleteDocById', async (req, res) => {
 });
 
 
-// // API-Route für Solr-Suche
-// app.post('/search', async (req, res) => {
-//     try {
-//         // App sendet Suchparameter
-//         const { query, filters } = req.body;
+// API-Route für Solr-Suche
+app.get('/search/filter', async (req, res) => {
+  const { query = '*:*', start = 0, rows = 50, ...filters } = req.query;
 
-//         // Solr-Query erstellen
-//         const solrParams = {
-//             q: query || '*:*',       // Standardabfrage, falls nichts übergeben
-//             fq: filters || '',       // Filter (z. B. Datum oder Sprache)
-//             wt: 'json',              // Antwortformat JSON
-//         };
+  // Filter als Key-Value-Paare verarbeiten, unterstützt Ranges
+  const filterQueries = Object.entries(filters)
+    .map(([key, value]) => `${key}:${encodeURIComponent(value)}`)
+    .join(' AND ');
 
-//         // Anfrage an Solr senden
-//         const response = await axios.get("http://localhost:8983/solr/your_core/select", { params: solrParams });
+    console.log("FILTER QUERIES:");
+    console.log(filterQueries);
 
-//         // Relevante Daten zurückgeben
-//         res.json({
-//             success: true,
-//             data: response.data.response.docs,
-//         });
-//     } catch (error) {
-//         console.error('Fehler bei Solr-Abfrage:', error.message);
-//         res.status(500).json({ success: false, message: 'Fehler bei Solr-Abfrage' });
-//     }
-// });
+
+  // Kombinierte Query erstellen
+  const combinedQuery = `${query} AND ${filterQueries}`;
+
+  console.log("COMBINED QUERIES:");
+  console.log(combinedQuery);
+
+  try {
+    const solrResponse = await axios.get(
+      `http://localhost:8983/solr/scan2doc/select?indent=true&q=${encodeURIComponent(combinedQuery)}&start=${start}&rows=${rows}`
+    );
+    res.json(solrResponse.data.response);
+  } catch (error) {
+    console.error('Error querying Solr:', error);
+    res.status(500).send('Error querying Solr');
+  }
+});
 
 // Beispiel einer API-Route
 app.get('/api/test', (req, res) => {

@@ -63,13 +63,14 @@ class _DocumentOverviewState extends State<DocumentOverview> {
         final imagePath = await apiService.uploadImage(File(page.imagePath));
         String currentFilename = existingFilename ?? widget.session.fileName;
         int currentPage = newPage ?? page.pageNumber;
+        String documentTime = getTimeOfDate(page.captureDate);
 
         await apiService.sendDataToServer(
           currentFilename,
           page.scannedText, // Text aus OCR
           language: page.language,
-          // scanDate: page.captureDate.toIso8601String(),
           scanDate: page.captureDate,
+          scanTime: documentTime,
           imageUrl: imagePath,
           pageNumber: currentPage,
         );
@@ -89,6 +90,20 @@ class _DocumentOverviewState extends State<DocumentOverview> {
         ),
       );
     }
+  }
+
+  String getTimeOfDate(String date) {
+    // Konvertiere den ISO-String in ein DateTime-Objekt
+    DateTime dateTime = DateTime.parse(date);
+
+    // Extrahiere die Uhrzeit und formatiere sie als String im gewünschten Format
+    String formattedTime =
+        "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+
+    // Gib den formatierten Zeitstring aus
+    print(formattedTime); // Ausgabe z.b.: "17:15"
+
+    return formattedTime;
   }
 
   Future<void> saveImageLocal(String imagePath) async {

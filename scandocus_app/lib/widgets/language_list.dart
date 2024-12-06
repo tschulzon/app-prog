@@ -20,7 +20,7 @@ class LanguageList extends StatefulWidget {
 }
 
 class _LanguageListState extends State<LanguageList> {
-  String selectedLanguage = "eng";
+  String selectedLanguage = "-";
   List<String> downloadedLanguages = [];
   String message = ""; // Download Message
   bool isDownloading = false;

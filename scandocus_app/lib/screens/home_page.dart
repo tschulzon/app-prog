@@ -74,7 +74,10 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Gescannte Elemente')),
+        backgroundColor: Color(0xFFF2F2F2),
+        // appBar: AppBar(
+        //     title: const Text('Gescannte Elemente'),
+        //     backgroundColor: Color(0xFFF2F2F2)),
         body: DocumentsView(), // Zeigt die andere Seite an,
         bottomNavigationBar: CustomNavigationBar(
           currentPageIndex: _currentPageIndex,

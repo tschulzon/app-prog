@@ -27,6 +27,7 @@ class ApiService {
   Future<void> sendDataToServer(String fileName, String docText,
       {String? language,
       String? scanDate,
+      String? scanTime,
       String? imageUrl,
       int? pageNumber,
       String? id}) async {
@@ -42,6 +43,7 @@ class ApiService {
       'language':
           language ?? 'de', // Standardwert, wenn Sprache nicht angegeben ist
       'scanDate': scanDate ?? DateTime.now().toIso8601String(),
+      'scanTime': scanTime,
       'images': imageUrl,
       'siteNumber': pageNumber,
     };
@@ -64,12 +66,42 @@ class ApiService {
   }
 
   Future<List<Document>> getSolrData(
-      {int start = 0, int rows = 50, String? query}) async {
+      {int start = 0,
+      int rows = 50,
+      String? query,
+      String? startDate,
+      String? endDate,
+      String? startTime,
+      String? endTime,
+      String? startPage,
+      String? endPage,
+      String? language}) async {
     try {
-      final response = await http.get(
-        Uri.parse(
-            '$baseUrl/search?start=$start&rows=$rows&query=${query ?? "*:*"}'),
-      );
+      final uri = Uri.parse('$baseUrl/search').replace(queryParameters: {
+        'start': '$start',
+        'rows': '$rows',
+        'query': query ?? '*:*',
+        if (startDate != null && endDate != null) ...{
+          'startDate': startDate,
+          'endDate': endDate,
+        },
+        if (startTime != null && endTime != null) ...{
+          'startTime': startTime,
+          'endTime': endTime,
+        },
+        if (startPage != null && endPage != null) ...{
+          'startPage': startPage,
+          'endPage': endPage,
+        },
+        if (language != null) 'language': language,
+      });
+
+      print("URL:");
+      print(uri);
+
+      final response = await http.get(uri);
+
+      print(response);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -83,6 +115,24 @@ class ApiService {
     } catch (e) {
       print("Verbindungsfehler: $e");
       return [];
+    }
+  }
+
+  Future<List<Document>> searchDocuments(String searchTerm) async {
+    final response = await http.get(
+      Uri.parse(
+          'http://192.168.178.193:3000/searchtext?query=$searchTerm'), // Node.js-Serveradresse anpassen
+    );
+
+    print("RESPONSE");
+    print(response);
+
+    if (response.statusCode == 200) {
+      // Antwort parsen und in eine Liste von Dokumenten umwandeln
+      List<dynamic> data = json.decode(response.body);
+      return data.map((doc) => Document.fromJson(doc)).toList();
+    } else {
+      throw Exception('Fehler bei der Suchanfrage: ${response.statusCode}');
     }
   }
 

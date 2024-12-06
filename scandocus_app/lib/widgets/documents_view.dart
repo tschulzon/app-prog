@@ -3,11 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:clay_containers/clay_containers.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 
 import 'package:scandocus_app/models/document.dart';
 import '../screens/doc_page_overview.dart';
 import '../services/api_service.dart';
+import '../widgets/filter_dialog.dart';
 
 import 'package:provider/provider.dart';
 import '../utils/document_provider.dart';
@@ -22,16 +25,38 @@ class DocumentsView extends StatefulWidget {
 class _DocumentsViewState extends State<DocumentsView> {
   // List<Document> documents = [];
   bool isLoading = true;
+  // Variablen zum Speichern der Filterwerte
+  DateTime? _startDate;
+  DateTime? _endDate;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
+  String? selectedLanguage;
+  int? startSelectedPages;
+  int? endSelectedPages;
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    loadDocuments(); // Initialer Dokumenten-Load
+    loadDocuments();
+    // Nur Dokumente laden, wenn es keine gefilterten Dokumente gibt
+    // if (Provider.of<DocumentProvider>(context, listen: false)
+    //     .documents
+    //     .isEmpty) {
+    //   loadDocuments(); // Initialer Dokumenten-Load
+    // }
+  }
+
+  @override
+  void dispose() {
+    searchController.clear(); // Text in der Suchleiste leeren
+    super.dispose();
   }
 
   Future<void> loadDocuments() async {
     try {
       final fetchedDocuments = await ApiService().getSolrData();
+
       if (mounted) {
         Provider.of<DocumentProvider>(context, listen: false)
             .setDocuments(fetchedDocuments);
@@ -42,7 +67,89 @@ class _DocumentsViewState extends State<DocumentsView> {
     } catch (e) {
       print("Fehler beim Laden der Dokumente: $e");
     }
-    print("DOKUMENTE:");
+  }
+
+  void applyFilters(Map<String, String> filters) async {
+    final filteredDocuments = await ApiService().getSolrData(
+      startDate: filters['startDate'],
+      endDate: filters['endDate'],
+      startTime: filters['startTime'],
+      endTime: filters['endTime'],
+      // startPage: filters['startPage'],
+      // endPage: filters['endPage'],
+      language: filters['language'],
+    );
+
+    final int? startPage = int.tryParse(filters['startPage'] ?? '');
+    final int? endPage = int.tryParse(filters['endPage'] ?? '');
+
+    List<Document> documentsToDisplay;
+
+    // Gruppiert Dokumente anhand ihrer Dateinamen und zählt die Gesamtanzahl der Seiten.
+    Map<String, List<Document>> documentGroups = {};
+    for (var document in filteredDocuments) {
+      final fileName = document
+          .fileName; // Nehmen wir an, `fileName` ist der Dateiname des Dokuments.
+      if (!documentGroups.containsKey(fileName)) {
+        documentGroups[fileName] = [];
+      }
+      documentGroups[fileName]!.add(document);
+    }
+
+    List<Document> filteredList = [];
+
+    // Überprüfen, ob Start- oder Endseite angegeben ist und Dokumente filtern.
+    if (startPage != null && startPage > 0 || endPage != null && endPage > 0) {
+      for (var entry in documentGroups.entries) {
+        String fileName = entry.key;
+        List<Document> documents = entry.value;
+
+        // Zählt die Gesamtanzahl der Seiten für das Dokument anhand der Gruppenanzahl.
+        int totalPageCount = documents.length;
+
+        bool matchesPageRange = true;
+
+        // Überprüfen, ob eine Startseite angegeben wurde.
+        if (startPage != null && startPage > 0) {
+          matchesPageRange = matchesPageRange && (totalPageCount >= startPage);
+        }
+
+        // Überprüfen, ob eine Endseite angegeben wurde.
+        if (endPage != null && endPage > 0) {
+          matchesPageRange = matchesPageRange && (totalPageCount <= endPage);
+        }
+
+        // Wenn das Dokument die Bedingungen erfüllt, füge alle Vorkommen hinzu.
+        if (matchesPageRange) {
+          filteredList.addAll(documents);
+        }
+      }
+    } else {
+      // Wenn keine Seitenzahlen angegeben sind, verwenden wir die ursprünglichen gefilterten Dokumente.
+      filteredList = filteredDocuments;
+    }
+    if (mounted) {
+      Provider.of<DocumentProvider>(context, listen: false)
+          .applyFilters(filteredList, filters);
+    }
+  }
+
+  Future<void> searchDocuments(String searchTerm) async {
+    try {
+      // Ergänze Wildcards zu der Suchanfrage, um die Teilwortsuche zu ermöglichen
+      String searchQuery = "*$searchTerm*";
+
+      final documents = await ApiService()
+          .searchDocuments(searchQuery); // Rufe die Ergebnisse ab
+
+      if (mounted) {
+        // Aktualisiere die Dokumente im Provider
+        Provider.of<DocumentProvider>(context, listen: false)
+            .updateSearchedDocuments(documents);
+      }
+    } catch (e) {
+      print("Fehler bei der Suche: $e");
+    }
   }
 
   String formatScanDate(String isoDate) {
@@ -55,109 +162,43 @@ class _DocumentsViewState extends State<DocumentsView> {
     return DateFormat('HH:mm').format(dateTime);
   }
 
-  TimeOfDay selectedTime = TimeOfDay.now(); // Aktuelle Zeit initialisieren
+  String convertDateToString(DateTime date) {
+    // Formatieren des Datums in ISO 8601 (UTC-Zeit)
+    String isoFormattedDate = date.toUtc().toIso8601String();
 
-  void _showFilterDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          // Hier verwenden wir StatefulBuilder damit die Zeit nach dem TimePicker automatisch aktualisiert wird
-          builder: (BuildContext context, StateSetter setStateDialog) {
-            return Dialog(
-              insetAnimationCurve: Curves.easeInOut,
-              child: Container(
-                width: double.infinity,
-                height: 600,
-                padding: const EdgeInsets.all(16.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text("Filter-Optionen",
-                            style: TextStyle(fontSize: 16)),
-                      ),
-                      Divider(),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: [
-                            const Text("Scan-Datum: "),
-                            const SizedBox(height: 10),
-                            InputDatePickerFormField(
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2101),
-                              initialDate: DateTime.now(),
-                              onDateSubmitted: (date) {
-                                // Hier kannst du den Filter anwenden, wenn ein Datum ausgewählt wurde
-                                print("Datum ausgewählt: $date");
-                              },
-                              onDateSaved: (date) {
-                                print("Datum gespeichert: $date");
-                              },
-                            ),
-                            Divider(),
-                            SizedBox(height: 20),
-                            // Zeigt die aktuell ausgewählte Zeit an
-                            Text('Scan-Uhrzeit: '),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(selectedTime.format(context)),
-                                ElevatedButton(
-                                    onPressed: () async {
-                                      // Öffne den TimePicker
-                                      final TimeOfDay? pickedTime =
-                                          await showTimePicker(
-                                        context: context,
-                                        initialTime: selectedTime,
-                                      );
+    // Ausgabe: "2024-12-04T00:00:00.000Z"
+    print(isoFormattedDate);
 
-                                      if (pickedTime != null &&
-                                          pickedTime != selectedTime) {
-                                        // Die Zeit sofort im Dialog aktualisieren
-                                        setStateDialog(() {
-                                          selectedTime = pickedTime;
-                                        });
-                                      }
-                                    },
-                                    child: Icon(Icons.schedule)),
-                              ],
-                            ),
-                            Divider(),
-                            Text("Seitenzahl: "),
-                            TextField(keyboardType: TextInputType.number),
-                            Divider(),
-                            Text("Sprache: ")
-                          ],
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Hier kannst du die Logik für den Filter anwenden
-                          // Der Dialog bleibt geöffnet, da wir den Dialog nicht schließen
-                        },
-                        child: const Text("Anwenden"),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+    return isoFormattedDate;
   }
+
+  String convertTimeToString(TimeOfDay time) {
+    final String formattedTime =
+        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+
+    // Ausgabe: "17:15" (wenn die Zeit 17:15 ist)
+    print(formattedTime);
+
+    return formattedTime;
+  }
+
+  TimeOfDay selectedTime = TimeOfDay.now(); // Aktuelle Zeit initialisieren
 
   @override
   Widget build(BuildContext context) {
+    //Fontstyling variable
+    final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Colors.black,
+        fontSize: 12.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
     // Zugriff auf den Provider
     final documentProvider = Provider.of<DocumentProvider>(context);
     final documents = documentProvider.documents;
     final apiService = ApiService();
+    Color baseColor = Color(0xFFF2F2F2);
     // Gruppiere Dokumente nach `fileName` und zähle die Seiten
     final groupedDocuments = <String, List<Document>>{};
     for (var doc in documents) {
@@ -177,37 +218,142 @@ class _DocumentsViewState extends State<DocumentsView> {
             })
         .toList();
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: <Widget>[
-          // Die Suchleiste
-          Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SearchBar(
-                    onChanged: (String value) {
-                      print("Suchabfrage: $value");
-                    },
-                    leading: const Icon(Icons.search),
-                    hintText: "Dateiname suchen",
-                    trailing: <Widget>[
-                      IconButton(
-                        onPressed: () {
-                          _showFilterDialog(context);
-                          // Hier könntest du den Filterdialog anzeigen
-                        },
-                        icon: const Icon(Icons.filter_alt),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+    return Scaffold(
+      backgroundColor: baseColor,
+      appBar: AppBar(
+          title: const Text('Dokumentenübersicht'),
+          titleTextStyle: GoogleFonts.quicksand(
+            textStyle: TextStyle(
+              color: Colors.black,
+              fontSize: 16.0,
+              fontWeight: FontWeight.w400,
+            ),
           ),
+          centerTitle: true,
+          backgroundColor: Color(0xFFF2F2F2)),
+      body: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: ClayContainer(
+              // emboss: true,
+              color: baseColor,
+              borderRadius: 50,
+              child: TextField(
+                style: TextStyle(fontSize: 12, height: 0),
+                controller: searchController,
+                onChanged: (String value) async {
+                  print("Suchabfrage: $value");
+                  if (value.isNotEmpty) {
+                    // Rufe die Methode auf, um eine Suchanfrage zu stellen und die Ergebnisse zu aktualisieren.
+                    await searchDocuments(value);
+                  } else {
+                    loadDocuments();
+                  }
+                },
+                decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search,
+                        color: Color.fromARGB(123, 16, 16, 16)),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.filter_alt,
+                          color: Color.fromARGB(123, 16, 16, 16)),
+                      onPressed: () async {
+                        // Zeige den Dialog an und erhalte die Rückgabewerte
+                        final result = await showDialog<Map<String, dynamic>>(
+                          context: context,
+                          builder: (BuildContext context) {
+                            // Übergebe die aktuellen Werte an den FilterDialog
+                            return FilterDialog(
+                              initialStartDate: _startDate,
+                              initialEndDate: _endDate,
+                              initialStartTime: _startTime,
+                              initialEndTime: _endTime,
+                              initialLanguage: selectedLanguage,
+                              initialStartPageNumber: startSelectedPages,
+                              initialEndPageNumber: endSelectedPages,
+                            );
+                          },
+                        );
 
+                        // Verarbeite die Rückgabewerte, wenn sie nicht null sind
+                        if (result != null) {
+                          setState(() {
+                            if (result['startDate'] != null) {
+                              _startDate = result['startDate'];
+                            } else {
+                              _startDate = null;
+                            }
+
+                            if (result['endDate'] != null) {
+                              _endDate = result['endDate'];
+                            } else {
+                              _endDate = null;
+                            }
+
+                            if (result['startTime'] != null) {
+                              _startTime = result['startTime'];
+                            } else {
+                              _startTime = null;
+                            }
+
+                            if (result['endTime'] != null) {
+                              _endTime = result['endTime'];
+                            } else {
+                              _endTime = null;
+                            }
+
+                            if (result['selectedLanguage'] != null) {
+                              selectedLanguage = result['selectedLanguage'];
+                            } else {
+                              selectedLanguage = null;
+                            }
+
+                            if (result['startSelectedPages'] != null) {
+                              startSelectedPages = result['startSelectedPages'];
+                            } else {
+                              startSelectedPages = null;
+                            }
+
+                            if (result['endSelectedPages'] != null) {
+                              endSelectedPages = result['endSelectedPages'];
+                            } else {
+                              endSelectedPages = null;
+                            }
+                          });
+
+                          applyFilters({
+                            if (result['startDate'] != null)
+                              'startDate':
+                                  convertDateToString(result['startDate']),
+                            if (result['endDate'] != null)
+                              'endDate': convertDateToString(result['endDate']),
+                            if (result['startTime'] != null)
+                              'startTime':
+                                  convertTimeToString(result['startTime']),
+                            if (result['endTime'] != null)
+                              'endTime': convertTimeToString(result['endTime']),
+                            if (result['selectedLanguage'] != null)
+                              'language': result['selectedLanguage'],
+                            if (result['startSelectedPages'] != null)
+                              'startPage':
+                                  result['startSelectedPages'].toString(),
+                            if (result['endSelectedPages'] != null)
+                              'endPage': result['endSelectedPages'].toString(),
+                          });
+                        }
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(32.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    hintText: "Name / Text suchen",
+                    hintStyle: quicksandTextStyle),
+              ),
+            ),
+          ),
+          // Die Suchleiste
+          SizedBox(height: 5),
           // Liste der Dokumente aus JSON
           Expanded(
             child: isLoading
@@ -228,120 +374,167 @@ class _DocumentsViewState extends State<DocumentsView> {
                       // final String imageUrl =
                       //     'http://192.168.178.49:3000${exampleDoc.image}';
 
-                      return Dismissible(
-                        key: Key(exampleDoc.id),
-                        direction: DismissDirection.endToStart,
-                        confirmDismiss: (direction) async {
-                          final bool confirm = await showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text("Löschen bestätigen"),
-                                content: const Text(
-                                    "Möchten Sie dieses Dokument wirklich löschen? Dies kann nicht rückgängig gemacht werden."),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context)
-                                          .pop(false); // Abbrechen
-                                    },
-                                    child: const Text('Abbrechen'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context)
-                                          .pop(true); // Abbrechen
-                                    },
-                                    child: const Text('Löschen',
-                                        style: TextStyle(color: Colors.red)),
-                                  ),
-                                ],
+                      return Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: ClayContainer(
+                          color: baseColor,
+                          height: 150,
+                          // width: 150,
+                          borderRadius: 20,
+                          child: Dismissible(
+                            key: Key(exampleDoc.id),
+                            direction: DismissDirection.endToStart,
+                            confirmDismiss: (direction) async {
+                              final bool confirm = await showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    content: Text(
+                                        "Möchten Sie dieses Dokument wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
+                                        style: GoogleFonts.quicksand(
+                                          textStyle: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 14.0,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        )),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context)
+                                              .pop(false); // Abbrechen
+                                        },
+                                        child: Text('Abbrechen',
+                                            style: GoogleFonts.quicksand()),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context)
+                                              .pop(true); // Abbrechen
+                                        },
+                                        child: Text('Löschen',
+                                            style: GoogleFonts.quicksand(
+                                              textStyle: TextStyle(
+                                                  color: Color.fromARGB(
+                                                      255, 123, 42, 36),
+                                                  fontWeight: FontWeight.w600),
+                                            )),
+                                      ),
+                                    ],
+                                  );
+                                },
                               );
-                            },
-                          );
-                          if (confirm) {
-                            // Dokument löschen, wenn bestätigt
-                            apiService
-                                .deleteManyDocsFromSolr(exampleDoc.fileName);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text('$fileName wurde gelöscht')),
-                            );
-                          }
+                              if (confirm) {
+                                // Dokument löschen, wenn bestätigt
+                                apiService.deleteManyDocsFromSolr(
+                                    exampleDoc.fileName);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text('$fileName wurde gelöscht')),
+                                );
+                              }
 
-                          return confirm; // Löschen nur, wenn bestätigt
-                        },
-                        background: Container(
-                          color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          child: const Icon(Icons.delete,
-                              color: Colors.white, size: 32),
-                        ),
-                        child: GestureDetector(
-                          onTap: () async {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => DocumentPageOvereview(
-                                  fileName: fileName,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Card(
-                            elevation: 4.0,
-                            child: SizedBox(
-                              height: 170,
-                              child: Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: SizedBox(
-                                      width: 70,
-                                      height: 100,
-                                      child: exampleDoc.image.isNotEmpty
-                                          ? Image.network(
-                                              imageUrl,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
-                                                return const Icon(Icons.error);
-                                              },
-                                            )
-                                          : const Icon(
-                                              Icons.image_not_supported),
+                              return confirm; // Löschen nur, wenn bestätigt
+                            },
+                            background: Container(
+                              color: const Color.fromARGB(255, 123, 42, 36),
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              child: const Icon(Icons.delete,
+                                  color: Colors.white, size: 32),
+                            ),
+                            child: GestureDetector(
+                              onTap: () async {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DocumentPageOvereview(
+                                      fileName: fileName,
                                     ),
                                   ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            fileName,
-                                            style: const TextStyle(
-                                              fontSize: 16.0,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Text(
-                                              'Scan-Datum: ${formatScanDate(exampleDoc.scanDate)}'),
-                                          Text(
-                                              'Scan-Uhrzeit: ${formatScanTime(exampleDoc.scanDate)}'),
-                                          Text(
-                                              'Sprache: ${exampleDoc.language}'),
-                                          Text('Seitenzahl: $pageCount'),
-                                          // const SizedBox(height: 8.0),
-                                        ],
+                                ).then((_) {
+                                  searchController.clear();
+                                  loadDocuments(); // Suchleiste und Dokumente zurücksetzen
+                                });
+                              },
+                              child: SizedBox(
+                                height: 170,
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Container(
+                                        width: 90,
+                                        height: 160,
+                                        decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(12.0),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.1),
+                                                offset: Offset(0, 4),
+                                                blurRadius: 4,
+                                              )
+                                            ]),
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(12.0),
+                                          child: exampleDoc.image.isNotEmpty
+                                              ? Image.network(
+                                                  imageUrl,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
+                                                    return const Icon(
+                                                        Icons.error);
+                                                  },
+                                                )
+                                              : const Icon(
+                                                  Icons.image_not_supported),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              fileName,
+                                              style: GoogleFonts.quicksand(
+                                                textStyle: TextStyle(
+                                                  color: const Color.fromARGB(
+                                                      255, 118, 33, 133),
+                                                  fontSize: 14.0,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ),
+                                            Text(
+                                                'Scan-Datum: ${formatScanDate(exampleDoc.scanDate)}',
+                                                style: quicksandTextStyle),
+                                            Text(
+                                                'Scan-Uhrzeit: ${formatScanTime(exampleDoc.scanDate)}',
+                                                style: quicksandTextStyle),
+                                            Text(
+                                                'Sprache: ${exampleDoc.language}',
+                                                style: quicksandTextStyle),
+                                            Text('Seitenzahl: $pageCount',
+                                                style: quicksandTextStyle),
+                                            // const SizedBox(height: 8.0),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),

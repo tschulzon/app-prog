@@ -39,8 +39,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
           //Visuelles Design wird erstellt
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color.fromARGB(255, 126, 11, 137))),
+          colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFFF2F2F2))),
       home: HomePage(), //Home Widget wird erstellt
     );
   }
