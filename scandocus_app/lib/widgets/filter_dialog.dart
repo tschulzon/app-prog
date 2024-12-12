@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:clay_containers/clay_containers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 
@@ -118,8 +120,30 @@ class _FilterDialogState extends State<FilterDialog> {
       initialDateRange: _startDate != null && _endDate != null
           ? DateTimeRange(start: _startDate!, end: _endDate!)
           : null,
-      firstDate: DateTime(2021),
-      lastDate: DateTime(2025),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: Color.fromARGB(219, 11, 185, 216),
+              onPrimary: Colors.white,
+              onSurface: Colors.white,
+              surface: Color.fromARGB(219, 11, 185, 216),
+            ),
+            textTheme: TextTheme(
+              bodyMedium: GoogleFonts.quicksand(
+                textStyle: TextStyle(color: Colors.white, fontSize: 14),
+              ), // Schriftart für die normalen Tage
+              titleLarge: GoogleFonts.quicksand(
+                textStyle: TextStyle(color: Colors.white, fontSize: 18),
+              ), // Schriftart für den Monatstitel
+            ),
+            dialogBackgroundColor: Color(0xFF202124),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
@@ -145,6 +169,7 @@ class _FilterDialogState extends State<FilterDialog> {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
+          backgroundColor: Color(0xFF202124),
           child: LanguageList(
               currentLanguage: " ",
               languageSelected: (newLang) {
@@ -179,27 +204,61 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    Color baseColor = Color(0xFF202124);
+
+    final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Color.fromARGB(219, 11, 185, 216),
+        fontSize: 12.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    final TextStyle quicksandTextStyleTitle = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 14.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    final TextStyle quicksandTextStyleButton = GoogleFonts.quicksand(
+      textStyle: TextStyle(
+        color: Color(0xFF202124),
+        fontSize: 14.0,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+
     return Dialog(
+      backgroundColor: baseColor,
       insetAnimationCurve: Curves.easeInOut,
       child: Container(
         width: double.infinity,
         height: 600,
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          // padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text("Filter-Optionen", style: TextStyle(fontSize: 16)),
+              Padding(
+                padding: EdgeInsets.all(12.0),
+                child: Text("Filter-Optionen",
+                    style: GoogleFonts.quicksand(
+                      textStyle: TextStyle(
+                        color: Color.fromARGB(219, 11, 185, 216),
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    )),
               ),
               Divider(),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
-                    const Text("Scan-Datum: "),
-                    const SizedBox(height: 10),
+                    Text("Scan-Datum: ", style: quicksandTextStyleTitle),
+                    SizedBox(height: 10),
                     // FilterDatePicker(),
                     // Eingabefelder für Start- und Enddatum
                     TextFormField(
@@ -208,29 +267,36 @@ class _FilterDialogState extends State<FilterDialog> {
                           text: _startDate != null
                               ? "${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}"
                               : ''),
-                      decoration: const InputDecoration(
+                      style: quicksandTextStyleTitle,
+                      decoration: InputDecoration(
                         labelText: "Startdatum",
+                        labelStyle: quicksandTextStyle,
                         suffixIcon: Icon(Icons.calendar_today),
+                        suffixIconColor: Color.fromARGB(219, 11, 185, 216),
                       ),
                       onTap: () => _selectDateRange(context),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     TextFormField(
                       readOnly: true,
                       controller: TextEditingController(
                           text: _endDate != null
                               ? "${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}"
                               : ''),
-                      decoration: const InputDecoration(
+                      style: quicksandTextStyleTitle,
+                      decoration: InputDecoration(
                         labelText: "Enddatum",
+                        labelStyle: quicksandTextStyle,
                         suffixIcon: Icon(Icons.calendar_today),
+                        suffixIconColor: Color.fromARGB(219, 11, 185, 216),
                       ),
                       onTap: () => _selectDateRange(context),
                     ),
-                    Divider(),
-                    SizedBox(height: 20),
+                    // Divider(),
+                    SizedBox(height: 30),
                     // Zeigt die aktuell ausgewählte Zeit an
-                    Text('Scan-Uhrzeit: '),
+                    Text('Scan-Uhrzeit:', style: quicksandTextStyleTitle),
+                    SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -239,9 +305,13 @@ class _FilterDialogState extends State<FilterDialog> {
                           child: TextFormField(
                             readOnly: true,
                             controller: startTimeController,
-                            decoration: const InputDecoration(
+                            style: quicksandTextStyleTitle,
+                            decoration: InputDecoration(
                               labelText: "Start",
+                              labelStyle: quicksandTextStyle,
                               suffixIcon: Icon(Icons.schedule),
+                              suffixIconColor:
+                                  Color.fromARGB(219, 11, 185, 216),
                             ),
                             onTap: () async {
                               final TimeOfDay? pickedTime =
@@ -269,9 +339,13 @@ class _FilterDialogState extends State<FilterDialog> {
                           child: TextFormField(
                             readOnly: true,
                             controller: endTimeController,
-                            decoration: const InputDecoration(
+                            style: quicksandTextStyleTitle,
+                            decoration: InputDecoration(
                               labelText: "Ende",
+                              labelStyle: quicksandTextStyle,
                               suffixIcon: Icon(Icons.schedule),
+                              suffixIconColor:
+                                  Color.fromARGB(219, 11, 185, 216),
                             ),
                             onTap: () async {
                               final TimeOfDay? pickedTime =
@@ -295,8 +369,8 @@ class _FilterDialogState extends State<FilterDialog> {
                         ),
                       ],
                     ),
-                    Divider(),
-                    Text("Seitenzahl: "),
+                    SizedBox(height: 30),
+                    Text("Seitenzahl:", style: quicksandTextStyleTitle),
                     Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -306,47 +380,93 @@ class _FilterDialogState extends State<FilterDialog> {
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
                               controller: startPageNumberController,
-                              decoration: InputDecoration(labelText: "Von"),
+                              style: quicksandTextStyleTitle,
+                              decoration: InputDecoration(
+                                  labelText: "Von",
+                                  labelStyle: quicksandTextStyle),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          SizedBox(width: 10),
                           Expanded(
                             child: TextField(
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
                               controller: endPageNumberController,
-                              decoration: InputDecoration(labelText: "Bis"),
+                              style: quicksandTextStyleTitle,
+                              decoration: InputDecoration(
+                                  labelText: "Bis",
+                                  labelStyle: quicksandTextStyle),
                             ),
                           ),
                         ]),
-                    Divider(),
-                    Text("Sprache: "),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        print("Sprachbutton gedrückt");
-                        _showLanguageDialog(context);
-                      },
-                      icon: const Icon(Icons.language),
-                      label: Text(selectedLanguage ?? "Sprachauswahl"),
+                    SizedBox(height: 30),
+                    Text("Sprache:", style: quicksandTextStyleTitle),
+                    SizedBox(height: 10),
+                    ClayContainer(
+                      depth: 5,
+                      spread: 5,
+                      surfaceColor: Color.fromARGB(219, 11, 185, 216),
+                      width: 220,
+                      color: baseColor,
+                      borderRadius: 30,
+                      child: GestureDetector(
+                        onTap: () async {
+                          print("Sprachbutton gedrückt");
+                          _showLanguageDialog(context);
+                        },
+                        child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.language,
+                                    color: Color(0xFF202124)),
+                                const SizedBox(width: 10.0),
+                                Text(selectedLanguage ?? "Sprachauswahl",
+                                    style: quicksandTextStyleButton)
+                              ],
+                            )),
+                      ),
                     ),
                   ],
                 ),
               ),
+              SizedBox(height: 30),
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
+                  ClayContainer(
+                    depth: 5,
+                    spread: 5,
+                    surfaceColor: Color.fromARGB(217, 214, 12, 12),
+                    width: 50,
+                    color: baseColor,
+                    borderRadius: 30,
+                    child: GestureDetector(
+                      onTap: () async {
                         print("ResetButton gedrückt");
                         resetFilters();
                       },
-                      child: const Icon(Icons.close),
+                      child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.close, color: Colors.white),
+                            ],
+                          )),
                     ),
                   ),
                   SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
+                  ClayContainer(
+                    depth: 5,
+                    spread: 5,
+                    surfaceColor: Color.fromARGB(217, 12, 214, 113),
+                    width: 50,
+                    color: baseColor,
+                    borderRadius: 30,
+                    child: GestureDetector(
+                      onTap: () async {
                         print("STARTDATUM:");
                         print(_startDate);
                         print("ENDDATUM:");
@@ -392,9 +512,67 @@ class _FilterDialogState extends State<FilterDialog> {
 
                         Navigator.pop(context, filters);
                       },
-                      child: const Icon(Icons.check),
+                      child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.check, color: Colors.white),
+                            ],
+                          )),
                     ),
                   ),
+                  // Expanded(
+                  //   child: ElevatedButton(
+                  //     onPressed: () {
+                  //       print("STARTDATUM:");
+                  //       print(_startDate);
+                  //       print("ENDDATUM:");
+                  //       print(_endDate);
+                  //       print("----------------------");
+                  //       print("STARTZEIT:");
+                  //       print(startTime);
+                  //       print("ENDZEIT:");
+                  //       print(endTime);
+                  //       print("----------------------");
+                  //       print("SPRACHE:");
+                  //       print(selectedLanguage);
+                  //       print("----------------------");
+                  //       print("Seitenzahl Von:");
+                  //       print(startSelectedPages);
+                  //       print("Seitenzahl Bis:");
+                  //       print(endSelectedPages);
+
+                  //       // Filter-Map dynamisch erstellen
+                  //       final filters = <String, dynamic>{};
+
+                  //       if (_startDate != null) {
+                  //         filters['startDate'] = _startDate;
+                  //       }
+                  //       if (_endDate != null) {
+                  //         filters['endDate'] = _endDate;
+                  //       }
+                  //       if (startTime != null) {
+                  //         filters['startTime'] = startTime;
+                  //       }
+                  //       if (endTime != null) {
+                  //         filters['endTime'] = endTime;
+                  //       }
+                  //       if (selectedLanguage != null) {
+                  //         filters['selectedLanguage'] = selectedLanguage;
+                  //       }
+                  //       if (startSelectedPages != null) {
+                  //         filters['startSelectedPages'] = startSelectedPages;
+                  //       }
+                  //       if (endSelectedPages != null) {
+                  //         filters['endSelectedPages'] = endSelectedPages;
+                  //       }
+
+                  //       Navigator.pop(context, filters);
+                  //     },
+                  //     child: const Icon(Icons.check),
+                  //   ),
+                  // ),
                 ],
               ),
             ],

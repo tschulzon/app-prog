@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:scandocus_app/main.dart';
 import 'package:scandocus_app/screens/doc_page.dart';
 import 'package:scandocus_app/screens/ocr_page.dart';
 import 'dart:io';
@@ -10,6 +11,9 @@ import '../models/document_session.dart';
 import '../screens/ocr_page.dart';
 import '../services/api_service.dart';
 import '../screens/home_page.dart';
+
+import 'package:clay_containers/clay_containers.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DocumentOverview extends StatefulWidget {
   final DocumentSession session;
@@ -83,11 +87,12 @@ class _DocumentOverviewState extends State<DocumentOverview> {
     }
 
     if (mounted) {
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => HomePage(),
-        ),
+            builder: (context) =>
+                MyApp()), // Wieder zu MyApp, das AppBar und NavigationBar enthält
+        (Route<dynamic> route) => false, // Entfernt alle anderen Routen
       );
     }
   }
@@ -133,84 +138,161 @@ class _DocumentOverviewState extends State<DocumentOverview> {
 
   @override
   Widget build(BuildContext context) {
+    Color baseColor = Color(0xFF202124);
+    final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Color.fromARGB(219, 11, 185, 216),
+        fontSize: 12.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    final TextStyle quicksandTextStyleTitle = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 14.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    final TextStyle quicksandTextStyleButton = GoogleFonts.quicksand(
+      textStyle: TextStyle(
+        color: baseColor,
+        fontSize: 14.0,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+
     return Scaffold(
-      appBar: AppBar(title: Text("Dokumentübersicht")),
+      backgroundColor: baseColor,
+      appBar: AppBar(
+        forceMaterialTransparency: true,
+        title: Text("Dokumentübersicht"),
+        titleTextStyle: GoogleFonts.quicksand(
+          textStyle: TextStyle(
+            color: Color.fromARGB(219, 11, 185, 216),
+            fontSize: 16.0,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: baseColor,
+        iconTheme: const IconThemeData(
+          color: Color.fromARGB(219, 11, 185, 216), // Farbe des Zurück-Pfeils
+        ),
+      ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _fileNameController,
-              decoration: InputDecoration(
-                labelText: "Dokumentname",
-                prefixIcon: Icon(Icons.edit),
+            child: ClayContainer(
+              color: baseColor,
+              depth: 13,
+              spread: 4,
+              borderRadius: 20,
+              child: TextField(
+                style: quicksandTextStyleTitle,
+                controller: _fileNameController,
+                decoration: InputDecoration(
+                  labelText: "Dokumentname",
+                  prefixIcon: Icon(Icons.edit,
+                      color: existingFilename != null
+                          ? Color.fromARGB(255, 50, 51, 54)
+                          : Color.fromARGB(219, 11, 185, 216)),
+                  labelStyle: quicksandTextStyle,
+                ),
+                enabled: existingFilename == null,
+                onChanged: (value) {
+                  if (existingFilename == null) {
+                    // Aktualisiere den Dokumentnamen, wenn der Benutzer etwas eingibt
+                    setState(() {
+                      widget.session.fileName = _fileNameController.text;
+                    });
+                    print("NEUER NAME?");
+                    print(widget.session.fileName);
+                  }
+                },
               ),
-              enabled: existingFilename == null,
-              onChanged: (value) {
-                if (existingFilename == null) {
-                  // Aktualisiere den Dokumentnamen, wenn der Benutzer etwas eingibt
-                  setState(() {
-                    widget.session.fileName = _fileNameController.text;
-                  });
-                  print("NEUER NAME?");
-                  print(widget.session.fileName);
-                }
-              },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: GridView.builder(
-              shrinkWrap: true,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // 2 Spalten
-                crossAxisSpacing: 10.0,
-                mainAxisSpacing: 10.0,
-              ),
-              itemCount: widget.session.pages.length,
-              itemBuilder: (context, index) {
-                final page = widget.session.pages[index];
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, // 2 Spalten
+                    crossAxisSpacing: 10.0,
+                    mainAxisSpacing: 10.0,
+                    mainAxisExtent: 200,
+                  ),
+                  itemCount: widget.session.pages.length,
+                  itemBuilder: (context, index) {
+                    final page = widget.session.pages[index];
 
-                return GestureDetector(
-                  onTap: () async {
-                    // Navigiere zur OCR-Seite und aktualisiere den Text
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OcrProcessView(
-                          selectedImage: File(page.imagePath),
+                    return GestureDetector(
+                      onTap: () async {
+                        // Navigiere zur OCR-Seite und aktualisiere den Text
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OcrProcessView(
+                              selectedImage: File(page.imagePath),
+                            ),
+                          ),
+                        );
+
+                        if (result != null && result is Map) {
+                          page.scannedText = result['scannedText'] ?? "";
+                          page.language = result['selectedLanguage'] ?? "eng";
+                        }
+                      },
+                      child: ClayAnimatedContainer(
+                        depth: 13,
+                        spread: 5,
+                        color: baseColor,
+                        borderRadius: 20,
+                        curveType: CurveType.none,
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 200,
+                              height: 150,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(12.0),
+                                      topRight: Radius.circular(12.0)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      offset: Offset(0, 4),
+                                      blurRadius: 4,
+                                    )
+                                  ]),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(12.0),
+                                    topRight: Radius.circular(12.0)),
+                                child: Image.file(
+                                  File(page.imagePath),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text("Seite ${index + 1}",
+                                  style: quicksandTextStyleTitle),
+                            ),
+                          ],
                         ),
                       ),
                     );
-
-                    if (result != null && result is Map) {
-                      page.scannedText = result['scannedText'] ?? "";
-                      page.language = result['selectedLanguage'] ?? "eng";
-                    }
                   },
-                  child: SizedBox(
-                    width: 100,
-                    height: 500,
-                    child: Card(
-                      elevation: 4.0,
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: Image.file(
-                              File(page.imagePath),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text("Seite ${index + 1}"),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+                ),
+              ),
             ),
           ),
           // ElevatedButton.icon(
@@ -240,15 +322,41 @@ class _DocumentOverviewState extends State<DocumentOverview> {
         ],
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(50.0),
-        child: ElevatedButton.icon(
-          onPressed: () async {
-            await sendDataToSolr();
-          },
-          icon: Icon(Icons.save),
-          label: Text("Dokument speichern"),
+        padding: const EdgeInsets.all(20.0),
+        child: ClayContainer(
+          depth: 13,
+          spread: 5,
+          surfaceColor: Color.fromARGB(219, 11, 185, 216),
+          width: 200,
+          color: baseColor,
+          borderRadius: 30,
+          child: GestureDetector(
+            onTap: () async {
+              await sendDataToSolr();
+            },
+            child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.save, color: Color(0xFF202124)),
+                    const SizedBox(width: 5.0),
+                    Text("Dokument speichern", style: quicksandTextStyleButton)
+                  ],
+                )),
+          ),
         ),
       ),
+      // Padding(
+      //   padding: const EdgeInsets.all(50.0),
+      //   child: ElevatedButton.icon(
+      //     onPressed: () async {
+      //       await sendDataToSolr();
+      //     },
+      //     icon: Icon(Icons.save),
+      //     label: Text("Dokument speichern"),
+      //   ),
+      // ),
     );
   }
 }

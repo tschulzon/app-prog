@@ -8,6 +8,9 @@ import '../models/document_session.dart';
 import '../screens/camera_preview_overview.dart';
 import '../screens/image_preview.dart';
 
+import 'package:clay_containers/clay_containers.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 // A screen that allows users to take a picture using a given camera.
 class TakePictureScreen extends StatefulWidget {
   // final List<CameraDescription> cameras;
@@ -111,8 +114,17 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Color baseColor = Color(0xFFF2F2F2);
+
+    final TextStyle quicksandTextStyleTitle = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Colors.black,
+        fontSize: 16.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Dokument aufnehmen')),
       // You must wait until the controller is initialized before displaying the
       // camera preview. Use a FutureBuilder to display a loading spinner until the
       // controller has finished initializing.
@@ -145,6 +157,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: baseColor,
         // Provide an onPressed callback.
         onPressed: () async {
           if (_controller != null) {

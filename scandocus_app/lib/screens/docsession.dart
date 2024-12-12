@@ -43,6 +43,7 @@ class DocumentSessionScreenState extends State<DocumentSessionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        forceMaterialTransparency: true,
         title: Text(session.fileName),
         actions: [
           IconButton(

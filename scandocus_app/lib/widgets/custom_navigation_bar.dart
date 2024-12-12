@@ -21,13 +21,16 @@ class CustomNavigationBar extends StatelessWidget {
         fontWeight: FontWeight.w400,
       ),
     );
-    Color baseColor = Color(0xFFF2F2F2);
+    Color baseColor = Color(0xFF202124);
     return ClayContainer(
+      depth: 13,
+      spread: 5,
       color: baseColor,
       child: NavigationBar(
-        backgroundColor: baseColor,
+        // backgroundColor: baseColor,
         selectedIndex: currentPageIndex,
         onDestinationSelected: onDestinationSelected,
+        // indicatorColor: Color.fromARGB(219, 11, 185, 216),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.house),

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'dart:convert';
@@ -20,6 +21,24 @@ class LanguageList extends StatefulWidget {
 }
 
 class _LanguageListState extends State<LanguageList> {
+  final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
+    textStyle: const TextStyle(
+      color: Color.fromARGB(219, 11, 185, 216),
+      fontSize: 10.0,
+      fontWeight: FontWeight.w400,
+    ),
+  );
+
+  final TextStyle quicksandTextStyle2 = GoogleFonts.quicksand(
+    textStyle: const TextStyle(
+      color: Colors.white,
+      fontSize: 16.0,
+      fontWeight: FontWeight.w600,
+    ),
+  );
+
+  Color baseColor = Color(0xFF0F1820);
+
   String selectedLanguage = "-";
   List<String> downloadedLanguages = [];
   String message = ""; // Download Message
@@ -90,7 +109,7 @@ class _LanguageListState extends State<LanguageList> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Herunterladen von $langName...'),
+              Text('Herunterladen von $langName...', style: quicksandTextStyle),
               SizedBox(height: 20),
               ProgressIndicatorExample(), // Fortschrittsbalken
             ],
@@ -107,7 +126,18 @@ class _LanguageListState extends State<LanguageList> {
       HttpClientResponse response = await request.close();
       Uint8List bytes = await consolidateHttpClientResponseBytes(response);
 
+      print(request);
+      print(response);
+
       String dir = await FlutterTesseractOcr.getTessdataPath();
+
+      // Verzeichnis erstellen, falls nicht vorhanden
+      Directory tessDataDir = Directory(dir);
+      if (!await tessDataDir.exists()) {
+        print('Creating tessdata directory...');
+        await tessDataDir.create(recursive: true);
+      }
+
       File file = File('$dir/$langCode.traineddata');
 
       // Die heruntergeladene Sprachdatei speichern
@@ -156,74 +186,80 @@ class _LanguageListState extends State<LanguageList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sprachoptionen'),
+    final TextStyle quicksandTextStyleNativeName = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Color.fromARGB(219, 11, 185, 216),
+        fontSize: 10.0,
+        fontWeight: FontWeight.w400,
       ),
-      body: FutureBuilder<List<LangOptions>>(
-        // Hier wird die Funktion aufgerufen, die die Daten lädt
-        future: loadData(),
-        builder: (context, snapshot) {
-          // Wenn die Daten geladen werden
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
+    );
 
-          // Wenn ein Fehler beim Laden auftritt
-          if (snapshot.hasError) {
-            return Center(child: Text('Fehler: ${snapshot.error}'));
-          }
+    return FutureBuilder<List<LangOptions>>(
+      // Hier wird die Funktion aufgerufen, die die Daten lädt
+      future: loadData(),
+      builder: (context, snapshot) {
+        // Wenn die Daten geladen werden
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
 
-          // Wenn keine Daten vorhanden sind
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('Keine Sprachen verfügbar.'));
-          }
+        // Wenn ein Fehler beim Laden auftritt
+        if (snapshot.hasError) {
+          return Center(child: Text('Fehler: ${snapshot.error}'));
+        }
 
-          // Wenn die Daten erfolgreich geladen wurden, zeige die Liste
-          List<LangOptions> languages = snapshot.data!;
+        // Wenn keine Daten vorhanden sind
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('Keine Sprachen verfügbar.'));
+        }
 
-          return ListView.builder(
-            itemCount: languages.length,
-            itemBuilder: (context, index) {
-              final lang = languages[index];
-              final isDownloaded = downloadedLanguages.contains(lang.code);
+        // Wenn die Daten erfolgreich geladen wurden, zeige die Liste
+        List<LangOptions> languages = snapshot.data!;
 
-              return ListTile(
-                title: Text(lang
-                    .englishName), // Anzeige des englischen Namens der Sprache
-                subtitle: Text(
-                    lang.nativeName), // Anzeige des native Namens der Sprache
-                leading: isDownloaded
-                    ? Icon(Icons.check,
-                        color: Colors.green) // Sprache wurde heruntergeladen
-                    : IconButton(
-                        icon: Icon(Icons.download),
-                        onPressed: () async {
-                          await addLanguage(lang.code,
-                              lang.englishName); // Sprache herunterladen
-                        },
-                      ),
-                onTap: isDownloaded
-                    ? () {
-                        setState(() {
-                          widget.languageSelected(
-                              lang); // Callback für übergeordneten Screen
-                        });
-                        Navigator.pop(context, lang); // Sprache zurückgeben
-                      }
-                    : null, // Deaktiviert onTap, wenn Sprache nicht heruntergeladen ist
-                tileColor: isDownloaded
-                    ? (lang.code == widget.currentLanguage
-                        ? const Color.fromARGB(255, 116, 8, 132).withOpacity(
-                            0.1) // Hervorhebung der ausgewählten Sprache
-                        : null) // Keine Farbe für heruntergeladene, aber nicht ausgewählte Sprachen
-                    : const Color.fromARGB(255, 61, 59, 61).withOpacity(
-                        0.1), // Ausgrauen für nicht heruntergeladene Sprachen
-              );
-            },
-          );
-        },
-      ),
+        return ListView.builder(
+          itemCount: languages.length,
+          itemBuilder: (context, index) {
+            final lang = languages[index];
+            final isDownloaded = downloadedLanguages.contains(lang.code);
+
+            return ListTile(
+              title: Text(lang.englishName,
+                  style:
+                      quicksandTextStyle2), // Anzeige des englischen Namens der Sprache
+              subtitle: Text(lang.nativeName,
+                  style:
+                      quicksandTextStyleNativeName), // Anzeige des native Namens der Sprache
+              leading: isDownloaded
+                  ? Icon(Icons.check,
+                      color: Color.fromARGB(
+                          219, 11, 185, 216)) // Sprache wurde heruntergeladen
+                  : IconButton(
+                      icon: Icon(Icons.download),
+                      onPressed: () async {
+                        await addLanguage(lang.code,
+                            lang.englishName); // Sprache herunterladen
+                      },
+                    ),
+              onTap: isDownloaded
+                  ? () {
+                      setState(() {
+                        widget.languageSelected(
+                            lang); // Callback für übergeordneten Screen
+                      });
+                      Navigator.pop(context, lang); // Sprache zurückgeben
+                    }
+                  : null, // Deaktiviert onTap, wenn Sprache nicht heruntergeladen ist
+              tileColor: isDownloaded
+                  ? (lang.code == widget.currentLanguage
+                      ? const Color.fromARGB(219, 11, 185, 216).withOpacity(
+                          0.1) // Hervorhebung der ausgewählten Sprache
+                      : null) // Keine Farbe für heruntergeladene, aber nicht ausgewählte Sprachen
+                  : const Color.fromARGB(255, 162, 156, 162).withOpacity(
+                      0.1), // Ausgrauen für nicht heruntergeladene Sprachen
+            );
+          },
+        );
+      },
     );
   }
 }

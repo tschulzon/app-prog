@@ -9,6 +9,9 @@ import '../screens/ocr_page.dart';
 import '../models/document_session.dart';
 import '../screens/camera_preview_overview.dart';
 
+import 'package:clay_containers/clay_containers.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 // A screen that allows users to take a picture using a given camera.
 class UploadImageScreen extends StatefulWidget {
   final String? existingFilename;
@@ -88,22 +91,71 @@ class UploadImageScreenState extends State<UploadImageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Color baseColor = Color(0xFF202124);
+    final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 12.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    final TextStyle quicksandTextStyleTitle = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 14.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    final TextStyle quicksandTextStyleButton = GoogleFonts.quicksand(
+      textStyle: TextStyle(
+        color: Color(0xFF202124),
+        fontSize: 14.0,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Aus Galerie hochladen')),
+      backgroundColor: baseColor,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text("Bitte ein Bild aus der Galerie auswählen."),
+            Text("Bitte ein Bild aus der Galerie auswählen.",
+                style: quicksandTextStyleTitle),
             SizedBox(height: 50),
-            ElevatedButton.icon(
-              onPressed: () async {
-                pickImage();
-              },
-              label: Text("Hochladen"),
-              icon: Icon(Icons.perm_media),
+            ClayContainer(
+              depth: 5,
+              spread: 5,
+              surfaceColor: Color.fromARGB(219, 11, 185, 216),
+              width: 220,
+              color: baseColor,
+              borderRadius: 30,
+              child: GestureDetector(
+                onTap: () async {
+                  pickImage();
+                },
+                child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.perm_media, color: Color(0xFF202124)),
+                        const SizedBox(width: 10.0),
+                        Text("Hochladen", style: quicksandTextStyleButton)
+                      ],
+                    )),
+              ),
             ),
+            // ElevatedButton.icon(
+            //   onPressed: () async {
+            //     pickImage();
+            //   },
+            //   label: Text("Hochladen"),
+            //   icon: Icon(Icons.perm_media),
+            // ),
           ],
         ),
       ),

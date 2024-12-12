@@ -29,8 +29,8 @@ class DocumentProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void removeDocument(String id) {
-    _documents.removeWhere((doc) => doc.id == id);
+  void removeDocument(String fileName) {
+    _documents.removeWhere((doc) => doc.fileName == fileName);
     notifyListeners();
   }
 

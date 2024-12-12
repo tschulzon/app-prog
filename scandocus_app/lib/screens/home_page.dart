@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
@@ -19,101 +20,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late CameraDescription selectedCamera;
-  int _currentPageIndex = 0;
-  String searchQuery = "";
-
-  var showText = "Hier wird Text angezeigt";
-
-  File? selectedImage; // Ausgewähltes Bild als Datei
-  final ImagePicker picker = ImagePicker();
-
-  // Methode zum Auswählen eines Bildes
-  Future<void> pickImage() async {
-    try {
-      final XFile? image = await picker.pickImage(
-          source: ImageSource.gallery); // Bild aus Galerie auswählen
-      if (image != null) {
-        setState(() {
-          selectedImage = File(image.path);
-          _currentPageIndex = 2;
-
-          navigateToOCRScreen();
-        });
-      }
-    } catch (e) {
-      setState(() {
-        showText = "Fehler beim Bildauswählen: $e";
-      });
-    }
-  }
-
-  // Navigiere zum OCR-Prozess-Bildschirm und übergebe das Bild
-  void navigateToOCRScreen() {
-    if (selectedImage != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OcrProcessView(selectedImage: selectedImage),
-        ),
-      ).then((value) {
-        // Wenn zurückgekehrt wird (z. B. nach OCR oder der Kamera), setzen wir den Index auf 0 zurück
-        setState(() {
-          _currentPageIndex = 0;
-        });
-      });
-    } else {
-      // Optional: Nachricht anzeigen, wenn kein Bild ausgewählt wurde
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Bitte wähle ein Bild aus!')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        backgroundColor: Color(0xFFF2F2F2),
-        // appBar: AppBar(
-        //     title: const Text('Gescannte Elemente'),
-        //     backgroundColor: Color(0xFFF2F2F2)),
-        body: DocumentsView(), // Zeigt die andere Seite an,
-        bottomNavigationBar: CustomNavigationBar(
-          currentPageIndex: _currentPageIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              _currentPageIndex = index;
-              // Wenn auf die Galerie geklickt wird, öffne den ImagePicker
-              if (_currentPageIndex == 2) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UploadImageScreen(),
-                  ),
-                ).then((value) {
-                  // Wenn zurückgekehrt wird (z. B. nach OCR oder der Kamera), setzen wir den Index auf 0 zurück
-                  setState(() {
-                    _currentPageIndex = 0;
-                  });
-                }); // Öffnet den ImagePicker
-              } else if (_currentPageIndex == 1) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TakePictureScreen(),
-                  ),
-                ).then((value) {
-                  // Wenn zurückgekehrt wird (z. B. nach OCR oder der Kamera), setzen wir den Index auf 0 zurück
-                  setState(() {
-                    _currentPageIndex = 0;
-                  });
-                });
-              }
-            });
-          },
-        ),
-      ),
+    return Scaffold(
+      backgroundColor: Color(0xFF202124),
+      body: DocumentsView(),
     );
   }
 }
