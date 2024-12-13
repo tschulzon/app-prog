@@ -216,4 +216,44 @@ class ApiService {
       print('Fehler beim Senden der Anfrage: $e');
     }
   }
+
+  // API-Aufruf, um nur die Seitenzahl zu aktualisieren
+  Future<void> updatePageNumber(String id, int pageNumber) async {
+    final url = Uri.parse(
+        'http://192.168.178.193:3000/api/updatepagenumber'); // Node.js-Server-URL
+    // final url = Uri.parse('http://192.168.2.171:3000/api/solr');
+    // final url = Uri.parse('http://192.168.178.49:3000/api/solr');
+
+    final escapedId = escapeSolrQuery(id);
+
+    final body = {
+      'id': escapedId,
+      'siteNumber': pageNumber,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        print('Update-Daten erfolgreich gesendet: ${response.body}');
+      } else {
+        print('Fehler: ${response.statusCode}, ${response.body}');
+      }
+    } catch (e) {
+      print('Fehler beim Senden der Anfrage: $e');
+    }
+  }
+
+  String escapeSolrQuery(String query) {
+    return query
+        .replaceAll(r'\', r'\\') // Backslashes escapen
+        .replaceAll('"', r'\"') // Anführungszeichen escapen
+        .replaceAll(' ', r'\ ') // Leerzeichen escapen
+        .replaceAll(':', r'\:') // Doppelpunkte escapen
+        .replaceAll('-', r'\-'); // Minus escapen
+  }
 }

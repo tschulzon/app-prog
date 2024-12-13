@@ -95,8 +95,75 @@ app.post('/api/solr', async (req, res) => {
   }
 });
 
+app.post('/api/updatepagenumber', async (req, res) => {
+  const { id, siteNumber } = req.body;
+
+  // Sicherheitsüberprüfung
+  if (!id || !siteNumber) {
+      return res.status(400).json({ message: 'id und siteNumber sind erforderlich!' });
+  }
+
+  try {
+    // Abrufen des bestehenden Dokuments aus Solr
+    const solrResponse = await axios.get(
+      `http://localhost:8983/solr/scan2doc/select?q=id:${id}&wt=json`
+    );
+
+    // Überprüfen, ob das Dokument existiert
+    if (!solrResponse.data.response || solrResponse.data.response.numFound === 0) {
+      return res.status(404).json({ message: 'Dokument nicht gefunden!' });
+    }
+
+    const originalId = unescapeSolrQuery(id);
+
+    const existingDocument = solrResponse.data.response.docs[0];
+    console.log(existingDocument);
+
+    const updatedDocument = {
+      "id": originalId,
+      "siteNumber": {"set": siteNumber},  // Nur Seitenzahl wird ersetzt
+      "filename": existingDocument.filename,
+      "text": existingDocument.text,
+      "image": existingDocument.image,
+      "language": existingDocument.language,
+    };
+
+    // Solr-Update
+    const updateResponse = await axios.post(
+      'http://localhost:8983/solr/scan2doc/update?commit=true',
+      [updatedDocument],
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+
+    res.status(200).json({
+      message: 'Update-Daten erfolgreich an Solr gesendet!',
+      solrResponse: updateResponse.data,
+    });
+  } catch (error) {
+    console.error('Fehler beim Senden an Solr:', error);
+    res.status(500).json({
+      message: 'Fehler beim Senden an Solr',
+      error: error.message,
+    });
+  }
+});
+
+function unescapeSolrQuery(escapedQuery) {
+  return escapedQuery
+    .replace(/\\ /g, ' ')
+    .replace(/\\-/g, '-')
+    .replace(/\\:/g, ':')
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\');
+}
+
+
 app.get('/search', async (req, res) => {
-  const { query, start = 0, rows = 50, startDate, endDate, startTime, endTime, startPage, endPage, language } = req.query; // Pagination und Suchparameter
+  const { query, start = 0, rows = 50, startDate, endDate, startTime, endTime, startPage, endPage, language } = req.query;
   
   // Solr-Query-Filter aufbauen
   const filters = [];
