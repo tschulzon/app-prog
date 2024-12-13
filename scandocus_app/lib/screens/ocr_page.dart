@@ -466,7 +466,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                           MainAxisAlignment.center,
                                       children: [
                                         const Icon(Icons.save,
-                                            color: Colors.grey),
+                                            color: Color(0xFF202124)),
                                         const SizedBox(width: 5.0),
                                         Text("Speichern",
                                             style: quicksandTextStyleButton)

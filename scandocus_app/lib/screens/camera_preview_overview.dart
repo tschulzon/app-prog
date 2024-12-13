@@ -200,6 +200,7 @@ class _DocumentOverviewState extends State<DocumentOverview> {
                           ? Color.fromARGB(255, 50, 51, 54)
                           : Color.fromARGB(219, 11, 185, 216)),
                   labelStyle: quicksandTextStyle,
+                  border: InputBorder.none,
                 ),
                 enabled: existingFilename == null,
                 onChanged: (value) {

@@ -29,10 +29,18 @@ class _LanguageListState extends State<LanguageList> {
     ),
   );
 
+  final TextStyle quicksandTextStyleWhite = GoogleFonts.quicksand(
+    textStyle: const TextStyle(
+      color: Colors.white,
+      fontSize: 10.0,
+      fontWeight: FontWeight.w400,
+    ),
+  );
+
   final TextStyle quicksandTextStyle2 = GoogleFonts.quicksand(
     textStyle: const TextStyle(
       color: Colors.white,
-      fontSize: 16.0,
+      fontSize: 14.0,
       fontWeight: FontWeight.w600,
     ),
   );
@@ -106,10 +114,12 @@ class _LanguageListState extends State<LanguageList> {
           false, // Verhindere, dass der Benutzer den Dialog schließt
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Color(0xFF0F1820),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Herunterladen von $langName...', style: quicksandTextStyle),
+              Text('Herunterladen von $langName...',
+                  style: quicksandTextStyleWhite),
               SizedBox(height: 20),
               ProgressIndicatorExample(), // Fortschrittsbalken
             ],

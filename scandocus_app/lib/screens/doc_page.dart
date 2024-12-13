@@ -27,6 +27,9 @@ class _DetailpageState extends State<Detailpage> {
   // final String serverUrl = 'http://192.168.2.171:3000';
   // final String serverUrl = 'http://192.168.178.49:3000'; //eltern wlan
 
+  late PageController pageController;
+  int currentIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +41,8 @@ class _DetailpageState extends State<Detailpage> {
       (d) => d.id == widget.document.id,
       orElse: () => widget.document, // Falls das Dokument nicht gefunden wird
     );
+
+    pageController = PageController(initialPage: currentIndex);
   }
 
   @override
@@ -61,16 +66,20 @@ class _DetailpageState extends State<Detailpage> {
 
     return Consumer<DocumentProvider>(
       builder: (context, documentProvider, child) {
-        //Aktuellste Version von Dokument holen
-        final currentDoc = documentProvider.documents.firstWhere(
-          (d) => d.id == doc.id,
-          orElse: () => doc, // Fallback auf lokale Kopie
-        );
+        // Hier holst du die Liste der Dokumente
+        final documents = documentProvider.documents;
+
+        // Sortieren der Dokumente nach `pageNumber`
+        documents.sort((a, b) => a.siteNumber.compareTo(b.siteNumber));
+
+        // Der Index der aktuellen Seite, um das entsprechende Dokument anzuzeigen
+        final initialIndex = documents.indexWhere((d) => d.id == doc.id);
+
         return Scaffold(
           backgroundColor: baseColor,
           appBar: AppBar(
             forceMaterialTransparency: true,
-            title: Text('Seite ${currentDoc.siteNumber}'),
+            title: Text('Seite ${documents[currentIndex].siteNumber}'),
             titleTextStyle: quicksandTextStyleTitle,
             centerTitle: true,
             backgroundColor: baseColor,
@@ -79,67 +88,86 @@ class _DetailpageState extends State<Detailpage> {
                   Color.fromARGB(219, 11, 185, 216), // Farbe des Zurück-Pfeils
             ),
           ),
-          body: SingleChildScrollView(
-            child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: Column(
-                    children: [
-                      ClayContainer(
-                        depth: 13,
-                        spread: 5,
-                        color: baseColor,
-                        borderRadius: 20,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: doc.image.isNotEmpty
-                              ? Image.network(
-                                  '$serverUrl${currentDoc.image}',
-                                  errorBuilder: (context, error, stackTrace) {
-                                    // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
-                                    return const Icon(Icons.error);
-                                  },
-                                )
-                              : const Icon(Icons.image_not_supported),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      ClayContainer(
-                        depth: 13,
-                        spread: 5,
-                        color: baseColor,
-                        borderRadius: 20,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
+          body: documents.isNotEmpty
+              ? PageView.builder(
+                  controller: pageController,
+                  itemCount: documents.length,
+                  onPageChanged: (pageIndex) {
+                    // Wenn der Benutzer die Seite wechselt, kannst du den AppBar-Titel aktualisieren
+                    setState(() {
+                      currentIndex = pageIndex;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    final currentDoc = documents[index];
+                    return SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Center(
                           child: Column(
                             children: [
-                              Text(
-                                "Erkannter Text: ",
-                                style: GoogleFonts.quicksand(
-                                  textStyle: TextStyle(
-                                    color: Color.fromARGB(219, 11, 185, 216),
-                                    fontSize: 14.0,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                              ClayContainer(
+                                depth: 13,
+                                spread: 5,
+                                color: baseColor,
+                                borderRadius: 20,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: currentDoc.image.isNotEmpty
+                                      ? Image.network(
+                                          '$serverUrl${currentDoc.image}',
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                            return const Icon(Icons.error);
+                                          },
+                                        )
+                                      : const Icon(Icons.image_not_supported),
                                 ),
                               ),
-                              SizedBox(height: 10),
-                              Text(
-                                currentDoc.docText.join('\n'),
-                                textAlign: TextAlign.center,
-                                style: quicksandTextStyle,
+                              SizedBox(
+                                height: 20,
+                              ),
+                              ClayContainer(
+                                depth: 13,
+                                spread: 5,
+                                color: baseColor,
+                                borderRadius: 20,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        "Erkannter Text: ",
+                                        style: GoogleFonts.quicksand(
+                                          textStyle: TextStyle(
+                                            color: Color.fromARGB(
+                                                219, 11, 185, 216),
+                                            fontSize: 14.0,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: 10),
+                                      Text(
+                                        currentDoc.docText.join('\n'),
+                                        textAlign: TextAlign.center,
+                                        style: quicksandTextStyle,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                )),
-          ),
-          bottomNavigationBar: BottomButtons(page: currentDoc),
+                    );
+                  },
+                )
+              : Center(
+                  child: Text('Keine Dokumente vorhanden.'),
+                ),
+          bottomNavigationBar: BottomButtons(page: documents[initialIndex]),
         );
       },
     );

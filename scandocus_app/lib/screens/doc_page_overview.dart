@@ -86,7 +86,7 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
                   crossAxisSpacing: 10,
-                  mainAxisSpacing: 30,
+                  mainAxisSpacing: 20,
                   crossAxisCount: 2,
                   childAspectRatio: 0.8,
                   onReorder: (oldIndex, newIndex) {
@@ -107,17 +107,12 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                       }
                     });
                   },
+                  //change look from grid view item
                   dragWidgetBuilder: (index, widget) {
-                    // Hier kannst du das Aussehen des gezogenen Elements anpassen
                     return Material(
-                      color: Color.fromARGB(
-                          219, 11, 185, 216), // Hintergrund transparent
-                      elevation:
-                          0, // Optional: füge einen Schatten hinzu, um das Element hervorzuheben
-                      borderRadius: BorderRadius.circular(
-                          20), // Optional: Abrundung der Ecken
-                      child:
-                          widget, // Das Widget bleibt unverändert, nur das Aussehen wird geändert
+                      color: Color.fromARGB(219, 11, 185, 216),
+                      borderRadius: BorderRadius.circular(20),
+                      child: widget,
                     );
                   },
                   footer: [
