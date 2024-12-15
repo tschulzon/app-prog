@@ -37,10 +37,21 @@ class _DetailpageState extends State<Detailpage> {
     // Lade das Dokument aus dem Provider, falls es aktualisiert wurde
     final documentProvider =
         Provider.of<DocumentProvider>(context, listen: false);
+
     doc = documentProvider.documents.firstWhere(
       (d) => d.id == widget.document.id,
       orElse: () => widget.document, // Falls das Dokument nicht gefunden wird
     );
+
+    //Nach Seitennummer sortieren
+    documentProvider.documents
+        .sort((a, b) => a.siteNumber.compareTo(b.siteNumber));
+
+    //alle Seiten des Dokuments anhand des filenames bekommen
+    final documents = documentProvider.getDocumentsByFileName(doc.fileName);
+
+    //Aktuelle seite zum anzeigen herholen
+    currentIndex = documents.indexWhere((d) => d.id == doc.id);
 
     pageController = PageController(initialPage: currentIndex);
   }
@@ -67,13 +78,7 @@ class _DetailpageState extends State<Detailpage> {
     return Consumer<DocumentProvider>(
       builder: (context, documentProvider, child) {
         // Hier holst du die Liste der Dokumente
-        final documents = documentProvider.documents;
-
-        // Sortieren der Dokumente nach `pageNumber`
-        documents.sort((a, b) => a.siteNumber.compareTo(b.siteNumber));
-
-        // Der Index der aktuellen Seite, um das entsprechende Dokument anzuzeigen
-        final initialIndex = documents.indexWhere((d) => d.id == doc.id);
+        final documents = documentProvider.getDocumentsByFileName(doc.fileName);
 
         return Scaffold(
           backgroundColor: baseColor,
@@ -167,7 +172,7 @@ class _DetailpageState extends State<Detailpage> {
               : Center(
                   child: Text('Keine Dokumente vorhanden.'),
                 ),
-          bottomNavigationBar: BottomButtons(page: documents[initialIndex]),
+          bottomNavigationBar: BottomButtons(page: documents[currentIndex]),
         );
       },
     );
