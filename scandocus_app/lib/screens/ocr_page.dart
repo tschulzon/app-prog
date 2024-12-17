@@ -253,7 +253,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
       } else if (takenPicture != null &&
           selectedImage == null &&
           existingImage == null) {
-        return Image.file(takenPicture! as File);
+        return Image.file(File(takenPicture!));
       } else if (existingImage != null &&
           takenPicture == null &&
           selectedImage == null) {

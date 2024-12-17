@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:intl/intl.dart';
+import 'package:scandocus_app/screens/camera_page.dart';
 
 import '../screens/ocr_page.dart';
 import '../models/document_session.dart';
@@ -130,7 +131,7 @@ class DisplayPictureScreen extends StatelessWidget {
                           final formatter =
                               DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
                           if (replaceImage != null) {
-                            Navigator.push(
+                            Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => OcrProcessView(
@@ -140,6 +141,7 @@ class DisplayPictureScreen extends StatelessWidget {
                                     replaceImage: replaceImage,
                                     existingPage: existingPage),
                               ),
+                              (Route<dynamic> route) => false,
                             );
                           } else {
                             session!.addPage(DocumentPage(
@@ -148,7 +150,7 @@ class DisplayPictureScreen extends StatelessWidget {
                               pageNumber: session!.pages.length + 1,
                             ));
 
-                            Navigator.pushReplacement(
+                            Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => DocumentOverview(
@@ -156,6 +158,7 @@ class DisplayPictureScreen extends StatelessWidget {
                                     existingFilename: existingFilename,
                                     newPage: newPage),
                               ),
+                              (Route<dynamic> route) => false,
                             );
                           }
                         },
@@ -186,7 +189,13 @@ class DisplayPictureScreen extends StatelessWidget {
                             captureDate: formatter.format(now),
                             pageNumber: session!.pages.length + 1,
                           ));
-                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  TakePictureScreen(session: session),
+                            ),
+                          );
                         },
                       ),
                     ),

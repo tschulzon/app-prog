@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:camera/camera.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:scandocus_app/main.dart';
+import 'package:scandocus_app/screens/home_page.dart';
 
 import '../screens/ocr_page.dart';
 import '../models/document_session.dart';
@@ -10,6 +14,7 @@ import '../screens/image_preview.dart';
 
 import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 
 // A screen that allows users to take a picture using a given camera.
 class TakePictureScreen extends StatefulWidget {
@@ -19,6 +24,7 @@ class TakePictureScreen extends StatefulWidget {
   final bool? replaceImage;
   final String? existingId;
   final int? existingPage;
+  final DocumentSession? session;
 
   const TakePictureScreen(
       {super.key,
@@ -26,7 +32,8 @@ class TakePictureScreen extends StatefulWidget {
       this.newPage,
       this.replaceImage,
       this.existingId,
-      this.existingPage});
+      this.existingPage,
+      this.session});
 
   // final CameraDescription camera;
 
@@ -36,8 +43,12 @@ class TakePictureScreen extends StatefulWidget {
 
 class TakePictureScreenState extends State<TakePictureScreen> {
   DocumentSession currentSession = DocumentSession(fileName: "Neues Dokument");
-  CameraController? _controller;
-  Future<void>? _initializeControllerFuture;
+  // DocumentScannerController? _controller;
+  List<String> _pictures = [];
+  String imagePath = "";
+
+  bool _isLoading = false;
+
   File? selectedImage; // Ausgewähltes Bild als Datei
   late String? existingFilename;
   late int? newPage;
@@ -48,7 +59,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   void initState() {
     super.initState();
-    _setupCamera();
+
+    initPlatformState();
 
     final now = DateTime.now();
     final formattedDate = DateFormat('yyyy-MM-dd_HH-mm-ss').format(now);
@@ -59,146 +71,189 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     existingId = widget.existingId;
     existingPage = widget.existingPage;
 
-    currentSession = DocumentSession(fileName: fileName);
-  }
-
-  Future<void> _setupCamera() async {
-    try {
-      // Lade die Liste der verfügbaren Kameras
-      final cameras = await availableCameras();
-
-      if (cameras.isNotEmpty) {
-        // Wähle die erste Kamera (Rückkamera) aus
-        final camera = cameras.first;
-
-        // Initialisiere den Controller
-        _controller = CameraController(
-          camera,
-          ResolutionPreset.medium,
-        );
-
-        // Initialisiere die Kamera
-        _initializeControllerFuture = _controller!.initialize();
-        setState(() {}); // Aktualisiere den Zustand
-      } else {
-        print('Keine Kameras verfügbar.');
-      }
-    } catch (e) {
-      print('Fehler beim Laden der Kamera: $e');
-    }
-  }
-
-  // Navigiere zum OCR-Prozess-Bildschirm und übergebe das Bild
-  void navigateToOCRScreen() {
-    if (selectedImage != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OcrProcessView(selectedImage: selectedImage),
-        ),
-      );
+    if (widget.session != null) {
+      currentSession = widget.session!;
     } else {
-      // Optional: Nachricht anzeigen, wenn kein Bild ausgewählt wurde
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Bitte wähle ein Bild aus!')),
-      );
+      currentSession = DocumentSession(fileName: fileName);
     }
+
+    openCameraScanner();
   }
 
-  @override
-  void dispose() {
-    // Dispose of the controller when the widget is disposed.
-    _controller?.dispose();
-    super.dispose();
+  Future<void> initPlatformState() async {}
+
+  Future<void> openCameraScanner() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final pictures = await CunningDocumentScanner.getPictures(
+            noOfPages: replaceImage != null ? 1 : 10,
+            isGalleryImportAllowed: true,
+          ) ??
+          [];
+      if (!mounted) return;
+
+      if (pictures.isNotEmpty) {
+        setState(() {
+          if (replaceImage != null) {
+            imagePath = pictures[0];
+          } else {
+            _pictures = pictures;
+          }
+        });
+        // imagePath = pictures[0];
+
+        final now = DateTime.now();
+        // Format: YYYY-MM-DDTHH:mm:ss.SSSZ
+        final formatter = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+        if (replaceImage != null) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OcrProcessView(
+                  takenPicture: imagePath,
+                  existingFilename: existingFilename,
+                  existingId: existingId,
+                  replaceImage: replaceImage,
+                  existingPage: existingPage),
+            ),
+            (Route<dynamic> route) => false,
+          );
+        } else {
+          for (var picture in _pictures) {
+            currentSession.addPage(DocumentPage(
+              imagePath: picture,
+              captureDate: formatter.format(now),
+              pageNumber: currentSession.pages.length + 1,
+            ));
+          }
+
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DocumentOverview(
+                  session: currentSession,
+                  existingFilename: existingFilename,
+                  newPage: newPage),
+            ),
+            (Route<dynamic> route) => false,
+          );
+        }
+      } else {
+        print("Keine Bilder aufgenommen");
+      }
+    } catch (exception) {
+      // Handle exception here
+      print("Fehler beim Öffnen der Kamera: $exception");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    Color baseColor = Color(0xFFF2F2F2);
-
-    final TextStyle quicksandTextStyleTitle = GoogleFonts.quicksand(
-      textStyle: const TextStyle(
-        color: Colors.black,
-        fontSize: 16.0,
-        fontWeight: FontWeight.w400,
-      ),
-    );
-
     return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(0), // Versteckt die AppBar
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0, // Setzt die AppBar auf unsichtbar
+        ),
+      ),
       // You must wait until the controller is initialized before displaying the
       // camera preview. Use a FutureBuilder to display a loading spinner until the
       // controller has finished initializing.
-      body: FutureBuilder<void>(
-        future: _initializeControllerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            //Make CameraPreview Fullscreen on every Device
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final double screenRatio =
-                    constraints.maxWidth / constraints.maxHeight;
-                final double previewRatio = _controller!.value.aspectRatio;
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Builder(
+              builder: (context) {
+                // Prüfe hier die Bedingung, z.B., keine Bilder aufgenommen
+                if (_pictures.isEmpty) {
+                  // Navigation zur anderen Seite auslösen
+                  Future.microtask(() {
+                    if (context.mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MyApp(),
+                        ),
+                      );
+                    }
+                  });
+                }
 
-                return OverflowBox(
-                  maxWidth: screenRatio > previewRatio
-                      ? constraints.maxWidth
-                      : constraints.maxHeight * previewRatio,
-                  maxHeight: screenRatio > previewRatio
-                      ? constraints.maxWidth / previewRatio
-                      : constraints.maxHeight,
-                  child: CameraPreview(_controller!),
+                // UI anzeigen, wenn Bilder vorhanden sind
+                return Center(
+                  child: Text("Keine Bilder aufgenommen."),
                 );
               },
-            );
-          } else {
-            // Otherwise, display a loading indicator.
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: baseColor,
-        // Provide an onPressed callback.
-        onPressed: () async {
-          if (_controller != null) {
-            try {
-              // Ensure that the camera is initialized.
-              print('Kamera wird initialisiert...');
-              await _initializeControllerFuture;
-
-              // Attempt to take a picture and get the file `image`
-              // where it was saved.
-              print('Versuche, ein Bild aufzunehmen...');
-              final image = await _controller!.takePicture();
-
-              if (!context.mounted) return;
-
-              // If the picture was taken, display it on a new screen.
-              print('Bild aufgenommen: ${image.path}');
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => DisplayPictureScreen(
-                    capturedImage: image.path,
-                    session: currentSession,
-                    existingFilename: existingFilename,
-                    newPage: newPage,
-                    replaceImage: replaceImage,
-                    existingId: existingId,
-                    existingPage: existingPage,
-                  ),
-                ),
-              );
-            } catch (e) {
-              // Fehlerbehandlung, wenn ein Problem beim Aufnehmen des Bildes auftritt
-              print("Fehler beim Aufnehmen des Bildes: $e");
-            }
-          }
-          // Take the Picture in a try / catch block. If anything goes wrong,
-          // catch the error.
-        },
-        child: const Icon(Icons.camera_alt),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+            ),
     );
+  }
+
+  void onPressed() async {
+    List<String> pictures;
+    String imagePath;
+    try {
+      pictures = await CunningDocumentScanner.getPictures(
+            noOfPages: replaceImage != null ? 1 : 10,
+            isGalleryImportAllowed: true,
+          ) ??
+          [];
+      if (!mounted) return;
+      setState(() {
+        if (replaceImage != null) {
+          imagePath = pictures[0];
+        } else {
+          _pictures = pictures;
+        }
+      });
+      imagePath = pictures[0];
+      final now = DateTime.now();
+      // Format: YYYY-MM-DDTHH:mm:ss.SSSZ
+      final formatter = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      if (replaceImage != null) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OcrProcessView(
+                takenPicture: imagePath,
+                existingFilename: existingFilename,
+                existingId: existingId,
+                replaceImage: replaceImage,
+                existingPage: existingPage),
+          ),
+          (Route<dynamic> route) => false,
+        );
+      } else {
+        for (var picture in _pictures) {
+          currentSession.addPage(DocumentPage(
+            imagePath: picture,
+            captureDate: formatter.format(now),
+            pageNumber: currentSession.pages.length + 1,
+          ));
+        }
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DocumentOverview(
+                session: currentSession,
+                existingFilename: existingFilename,
+                newPage: newPage),
+          ),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (exception) {
+      // Handle exception here
+      print("FEHLER: ");
+      print(exception);
+    }
   }
 }
