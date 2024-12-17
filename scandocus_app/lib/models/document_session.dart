@@ -7,6 +7,10 @@ class DocumentSession {
   void addPage(DocumentPage page) {
     pages.add(page);
   }
+
+  void removePage(DocumentPage page) {
+    pages.remove(page);
+  }
 }
 
 class DocumentPage {

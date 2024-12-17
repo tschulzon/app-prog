@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:scandocus_app/main.dart';
 import 'package:scandocus_app/screens/doc_page.dart';
 import 'package:scandocus_app/screens/ocr_page.dart';
+import 'package:scandocus_app/widgets/progress_bar.dart';
 import 'dart:io';
 
 import '../models/document.dart';
@@ -31,6 +32,7 @@ class _DocumentOverviewState extends State<DocumentOverview> {
   late TextEditingController _fileNameController;
   late String? existingFilename;
   late int? newPage;
+  bool isSending = false;
 
   @override
   void initState() {
@@ -57,6 +59,44 @@ class _DocumentOverviewState extends State<DocumentOverview> {
   }
 
   Future<void> sendDataToSolr() async {
+    setState(() {
+      isSending = true;
+    });
+
+    // Überprüfe, ob Text vorhanden ist, bevor der Ladebalken angezeigt wird
+    bool hasScannedText =
+        widget.session.pages.every((page) => page.scannedText.isNotEmpty);
+
+    if (hasScannedText) {
+      showDialog(
+        context: context,
+        barrierDismissible:
+            false, // Verhindere, dass der Benutzer den Dialog schließt
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Color(0xFF0F1820),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Daten werden gespeichert...',
+                  style: GoogleFonts.quicksand(
+                    textStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ProgressIndicatorExample(), // Fortschrittsbalken
+              ],
+            ),
+          );
+        },
+      );
+    }
+
     try {
       print("Session Data");
       print(widget.session);
@@ -66,27 +106,46 @@ class _DocumentOverviewState extends State<DocumentOverview> {
         // Bild hochladen und Pfad erhalten
         final imagePath = await apiService.uploadImage(File(page.imagePath));
         String currentFilename = existingFilename ?? widget.session.fileName;
-        int currentPage = newPage ?? page.pageNumber;
+        int currentPage = page.pageNumber;
         String documentTime = getTimeOfDate(page.captureDate);
 
-        await apiService.sendDataToServer(
-          currentFilename,
-          page.scannedText, // Text aus OCR
-          language: page.language,
-          scanDate: page.captureDate,
-          scanTime: documentTime,
-          imageUrl: imagePath,
-          pageNumber: currentPage,
-        );
+        if (page.scannedText.isNotEmpty) {
+          await apiService.sendDataToServer(
+            currentFilename,
+            page.scannedText, // Text aus OCR
+            language: page.language,
+            scanDate: page.captureDate,
+            scanTime: documentTime,
+            imageUrl: imagePath,
+            pageNumber: currentPage,
+          );
+        } else {
+          setState(() {
+            isSending = false;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Bitte scanne erst die Texte!'),
+                backgroundColor: Colors.red, // Wähle eine rote Farbe für Fehler
+                duration: Duration(seconds: 3), // Dauer der Anzeige
+              ),
+            );
+          }
+          return;
+        }
       }
-      print("Dokument gespeichert!");
-
-      print('Daten erfolgreich an Solr gesendet.');
     } catch (e) {
       print('Fehler beim Speichern und Senden: $e');
+    } finally {
+      setState(() {
+        isSending = false;
+      });
     }
 
     if (mounted) {
+      Navigator.pop(context);
+
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
@@ -229,97 +288,143 @@ class _DocumentOverviewState extends State<DocumentOverview> {
                     mainAxisSpacing: 10.0,
                     mainAxisExtent: 200,
                   ),
-                  itemCount: widget.session.pages.length,
+                  itemCount: widget.session.pages.length + 1,
                   itemBuilder: (context, index) {
-                    final page = widget.session.pages[index];
+                    if (index < widget.session.pages.length) {
+                      final page = widget.session.pages[index];
 
-                    return GestureDetector(
-                      onTap: () async {
-                        // Navigiere zur OCR-Seite und aktualisiere den Text
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OcrProcessView(
-                              selectedImage: File(page.imagePath),
-                            ),
-                          ),
-                        );
-
-                        if (result != null && result is Map) {
-                          page.scannedText = result['scannedText'] ?? "";
-                          page.language = result['selectedLanguage'] ?? "eng";
-                        }
-                      },
-                      child: ClayAnimatedContainer(
-                        depth: 13,
-                        spread: 5,
-                        color: baseColor,
-                        borderRadius: 20,
-                        curveType: CurveType.none,
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 200,
-                              height: 150,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(12.0),
-                                      topRight: Radius.circular(12.0)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      offset: Offset(0, 4),
-                                      blurRadius: 4,
-                                    )
-                                  ]),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(12.0),
-                                    topRight: Radius.circular(12.0)),
-                                child: Image.file(
-                                  File(page.imagePath),
-                                  fit: BoxFit.cover,
-                                ),
+                      return GestureDetector(
+                        onTap: () async {
+                          // Navigiere zur OCR-Seite und aktualisiere den Text
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OcrProcessView(
+                                selectedImage: File(page.imagePath),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text("Seite ${index + 1}",
-                                  style: quicksandTextStyleTitle),
-                            ),
-                          ],
+                          );
+
+                          if (result != null && result is Map) {
+                            page.scannedText = result['scannedText'] ?? "";
+                            page.language = result['selectedLanguage'] ?? "eng";
+                          }
+                        },
+                        child: ClayAnimatedContainer(
+                          depth: 13,
+                          spread: 5,
+                          color: baseColor,
+                          borderRadius: 20,
+                          curveType: CurveType.none,
+                          child: Stack(
+                            children: [
+                              Column(
+                                children: [
+                                  Container(
+                                    width: 200,
+                                    height: 150,
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(12.0),
+                                            topRight: Radius.circular(12.0)),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.1),
+                                            offset: Offset(0, 4),
+                                            blurRadius: 4,
+                                          )
+                                        ]),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(12.0),
+                                          topRight: Radius.circular(12.0)),
+                                      child: Image.file(
+                                        File(page.imagePath),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text("Seite ${index + 1}",
+                                        style: quicksandTextStyleTitle),
+                                  ),
+                                ],
+                              ),
+                              // Button zum Löschen - platziert oben rechts
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      widget.session.removePage(
+                                          widget.session.pages[index]);
+                                    });
+                                    print('Seite $index wurde gelöscht');
+                                  },
+                                  child: Container(
+                                    width: 25,
+                                    height: 25,
+                                    decoration: BoxDecoration(
+                                      color: const Color.fromARGB(
+                                          238, 159, 29, 29),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black26,
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: EdgeInsets.all(3),
+                                    child: Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                      size: 13,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    } else {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TakePictureScreen(
+                                session: widget.session,
+                                newPage: widget.session.pages.length + 1,
+                              ),
+                            ),
+                          );
+                        },
+                        child: ClayContainer(
+                          depth: 13,
+                          spread: 5,
+                          color: baseColor,
+                          borderRadius: 20,
+                          child: Center(
+                            child: Icon(
+                              Icons.add,
+                              size: 40.0,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
                   },
                 ),
               ),
             ),
           ),
-          // ElevatedButton.icon(
-          //   onPressed: () {
-          //     sendDataToSolr();
-          //     // Zurück zur Startseite
-          //     Navigator.popUntil(context, (route) => route.isFirst);
-          //     // Speichern und API-Aufruf
-          //     // final apiService = ApiService();
-          //     // for (var page in session.pages) {
-          //     //   await apiService.sendDataToServer(
-          //     //     session.fileName,
-          //     //     "", // Text wird in einer späteren OCR verarbeitet
-          //     //     language: "eng",
-          //     //     scanDate: page.captureDate.toIso8601String(),
-          //     //     imageUrl: page.imagePath,
-          //     //   );
-          //     // }
-          //     // print("Dokument gespeichert!");
-
-          //     // Zurück zur Startseite
-          //     // Navigator.popUntil(context, (route) => route.isFirst);
-          //   },
-          //   icon: Icon(Icons.save),
-          //   label: Text("Dokument speichern"),
-          // ),
         ],
       ),
       bottomNavigationBar: Padding(
@@ -348,16 +453,6 @@ class _DocumentOverviewState extends State<DocumentOverview> {
           ),
         ),
       ),
-      // Padding(
-      //   padding: const EdgeInsets.all(50.0),
-      //   child: ElevatedButton.icon(
-      //     onPressed: () async {
-      //       await sendDataToSolr();
-      //     },
-      //     icon: Icon(Icons.save),
-      //     label: Text("Dokument speichern"),
-      //   ),
-      // ),
     );
   }
 }
