@@ -39,12 +39,6 @@ class _DocumentsViewState extends State<DocumentsView> {
   void initState() {
     super.initState();
     loadDocuments();
-    // Nur Dokumente laden, wenn es keine gefilterten Dokumente gibt
-    // if (Provider.of<DocumentProvider>(context, listen: false)
-    //     .documents
-    //     .isEmpty) {
-    //   loadDocuments(); // Initialer Dokumenten-Load
-    // }
   }
 
   @override
@@ -162,14 +156,19 @@ class _DocumentsViewState extends State<DocumentsView> {
     return DateFormat('HH:mm').format(dateTime);
   }
 
-  String convertDateToString(DateTime date) {
+  String convertDateToString(DateTime date, bool isEndDate) {
+    //for showing all docs from start to end, set time to 23:59:59:999
+    if (isEndDate) {
+      date = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
+    }
     // Formatieren des Datums in ISO 8601 (UTC-Zeit)
-    String isoFormattedDate = date.toUtc().toIso8601String();
+    String isoFormattedDate = date.toIso8601String();
+    String isoFormattedDateZ = "${isoFormattedDate}Z";
 
     // Ausgabe: "2024-12-04T00:00:00.000Z"
-    print(isoFormattedDate);
+    print(isoFormattedDateZ);
 
-    return isoFormattedDate;
+    return isoFormattedDateZ;
   }
 
   String convertTimeToString(TimeOfDay time) {
@@ -208,6 +207,10 @@ class _DocumentsViewState extends State<DocumentsView> {
       groupedDocuments[doc.fileName]!.add(doc);
     }
 
+    groupedDocuments.forEach((fileName, docs) {
+      docs.sort((a, b) => b.scanDate.compareTo(a.scanDate));
+    });
+
     // Erstelle eine Liste aus den gruppierten Dokumenten
     final uniqueDocuments = groupedDocuments.entries
         .map((entry) => {
@@ -215,8 +218,18 @@ class _DocumentsViewState extends State<DocumentsView> {
               "count": entry.value.length,
               "exampleDoc":
                   entry.value.first, // Ein Beispiel-Dokument für Details
+              "scanDate": entry.value.first.scanDate,
             })
         .toList();
+
+    uniqueDocuments.sort((a, b) {
+      // Sicherstellen, dass scanDate als String vorliegt
+      String scanDateA = a['scanDate'] as String;
+      String scanDateB = b['scanDate'] as String;
+
+      // Vergleichen der Strings lexikografisch
+      return scanDateB.compareTo(scanDateA); // Neueste zuerst (absteigend)
+    });
 
     return Column(
       children: <Widget>[
@@ -248,18 +261,36 @@ class _DocumentsViewState extends State<DocumentsView> {
                         color: Color.fromARGB(219, 11, 185, 216)),
                     onPressed: () async {
                       // Zeige den Dialog an und erhalte die Rückgabewerte
-                      final result = await showDialog<Map<String, dynamic>>(
+                      final result =
+                          await showModalBottomSheet<Map<String, dynamic>>(
                         context: context,
+                        backgroundColor: Color(0xFF202124),
+                        isScrollControlled: true,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(
+                                  16.0)), // Abgerundete Ecken oben
+                        ),
                         builder: (BuildContext context) {
                           // Übergebe die aktuellen Werte an den FilterDialog
-                          return FilterDialog(
-                            initialStartDate: _startDate,
-                            initialEndDate: _endDate,
-                            initialStartTime: _startTime,
-                            initialEndTime: _endTime,
-                            initialLanguage: selectedLanguage,
-                            initialStartPageNumber: startSelectedPages,
-                            initialEndPageNumber: endSelectedPages,
+                          return ClipRRect(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(
+                                  16.0), // Setze hier die Rundung für die Ecken
+                            ),
+                            child: Container(
+                              height: MediaQuery.of(context).size.height * 0.7,
+                              color: Colors.transparent,
+                              child: FilterDialog(
+                                initialStartDate: _startDate,
+                                initialEndDate: _endDate,
+                                initialStartTime: _startTime,
+                                initialEndTime: _endTime,
+                                initialLanguage: selectedLanguage,
+                                initialStartPageNumber: startSelectedPages,
+                                initialEndPageNumber: endSelectedPages,
+                              ),
+                            ),
                           );
                         },
                       );
@@ -313,9 +344,10 @@ class _DocumentsViewState extends State<DocumentsView> {
                         applyFilters({
                           if (result['startDate'] != null)
                             'startDate':
-                                convertDateToString(result['startDate']),
+                                convertDateToString(result['startDate'], false),
                           if (result['endDate'] != null)
-                            'endDate': convertDateToString(result['endDate']),
+                            'endDate':
+                                convertDateToString(result['endDate'], true),
                           if (result['startTime'] != null)
                             'startTime':
                                 convertTimeToString(result['startTime']),

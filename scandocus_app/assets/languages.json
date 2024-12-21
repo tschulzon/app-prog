@@ -1,604 +1,604 @@
 {
     "languages": [
       {
-        "code": "afr",
-        "englishName": "Afrikaans",
-        "nativeName": "Afrikaans"
+        "langcode": "afr",
+        "language": "Afrikaans",
+        "localname": "Afrikaans"
       },
       {
-        "code": "amh",
-        "englishName": "Amharic",
-        "nativeName": "አማርኛ"
+        "langcode": "amh",
+        "language": "Amharic",
+        "localname": "አማርኛ"
       },
       {
-        "code": "ara",
-        "englishName": "Arabic",
-        "nativeName": "العربية"
+        "langcode": "ara",
+        "language": "Arabic",
+        "localname": "العربية"
       },
       {
-        "code": "asm",
-        "englishName": "Assamese",
-        "nativeName": "অসমীয়া"
+        "langcode": "asm",
+        "language": "Assamese",
+        "localname": "অসমীয়া"
       },
       {
-        "code": "aze",
-        "englishName": "Azerbaijani",
-        "nativeName": "Azərbaycan"
+        "langcode": "aze",
+        "language": "Azerbaijani",
+        "localname": "Azərbaycan"
       },
       {
-        "code": "aze_cyrl",
-        "englishName": "Azerbaijani - Cyrilic",
-        "nativeName": "Азәрбајҹан"
+        "langcode": "aze_cyrl",
+        "language": "Azerbaijani - Cyrilic",
+        "localname": "Азәрбајҹан"
       },
       {
-        "code": "bel",
-        "englishName": "Belarusian",
-        "nativeName": "Беларуская"
+        "langcode": "bel",
+        "language": "Belarusian",
+        "localname": "Беларуская"
       },
       {
-        "code": "ben",
-        "englishName": "Bengali",
-        "nativeName": "বাংলা"
+        "langcode": "ben",
+        "language": "Bengali",
+        "localname": "বাংলা"
       },
       {
-        "code": "bod",
-        "englishName": "Tibetan",
-        "nativeName": "བོད་སྐད་"
+        "langcode": "bod",
+        "language": "Tibetan",
+        "localname": "བོད་སྐད་"
       },
       {
-        "code": "bos",
-        "englishName": "Bosnian",
-        "nativeName": "Bosanski"
+        "langcode": "bos",
+        "language": "Bosnian",
+        "localname": "Bosanski"
       },
       {
-        "code": "bre",
-        "englishName": "Breton",
-        "nativeName": "Brezhoneg"
+        "langcode": "bre",
+        "language": "Breton",
+        "localname": "Brezhoneg"
       },
       {
-        "code": "bul",
-        "englishName": "Bulgarian",
-        "nativeName": "Български"
+        "langcode": "bul",
+        "language": "Bulgarian",
+        "localname": "Български"
       },
       {
-        "code": "cat",
-        "englishName": "Catalan",
-        "nativeName": "Català"
+        "langcode": "cat",
+        "language": "Catalan",
+        "localname": "Català"
       },
       {
-        "code": "ceb",
-        "englishName": "Cebuano",
-        "nativeName": "Cebuano"
+        "langcode": "ceb",
+        "language": "Cebuano",
+        "localname": "Cebuano"
       },
       {
-        "code": "ces",
-        "englishName": "Czech",
-        "nativeName": "Čeština"
+        "langcode": "ces",
+        "language": "Czech",
+        "localname": "Čeština"
       },
       {
-        "code": "chi_sim",
-        "englishName": "Chinese - Simplified",
-        "nativeName": "简体中文"
+        "langcode": "chi_sim",
+        "language": "Chinese - Simplified",
+        "localname": "简体中文"
       },
       {
-        "code": "chi_tra",
-        "englishName": "Chinese - Traditional",
-        "nativeName": "繁體中文"
+        "langcode": "chi_tra",
+        "language": "Chinese - Traditional",
+        "localname": "繁體中文"
       },
       {
-        "code": "chr",
-        "englishName": "Cherokee",
-        "nativeName": "ᏣᎳᎩ"
+        "langcode": "chr",
+        "language": "Cherokee",
+        "localname": "ᏣᎳᎩ"
       },
       {
-        "code": "cos",
-        "englishName": "Corsican",
-        "nativeName": "Corsu"
+        "langcode": "cos",
+        "language": "Corsican",
+        "localname": "Corsu"
       },
       {
-        "code": "cym",
-        "englishName": "Welsh",
-        "nativeName": "Cymraeg"
+        "langcode": "cym",
+        "language": "Welsh",
+        "localname": "Cymraeg"
       },
       {
-        "code": "dan",
-        "englishName": "Danish",
-        "nativeName": "Dansk"
+        "langcode": "dan",
+        "language": "Danish",
+        "localname": "Dansk"
       },
       {
-        "code": "dan_frak",
-        "englishName": "Danish - Fraktur",
-        "nativeName": "Dansk (Fraktur)"
+        "langcode": "dan_frak",
+        "language": "Danish - Fraktur",
+        "localname": "Dansk (Fraktur)"
       },
       {
-        "code": "deu",
-        "englishName": "German",
-        "nativeName": "Deutsch"
+        "langcode": "deu",
+        "language": "German",
+        "localname": "Deutsch"
       },
       {
-        "code": "deu_frak",
-        "englishName": "German - Fraktur",
-        "nativeName": "Deutsch (Fraktur)"
+        "langcode": "deu_frak",
+        "language": "German - Fraktur",
+        "localname": "Deutsch (Fraktur)"
       },
       {
-        "code": "deu_latf",
-        "englishName": "German (Fraktur Latin)",
-        "nativeName": "Deutsch (Fraktur Latin)"
+        "langcode": "deu_latf",
+        "language": "German (Fraktur Latin)",
+        "localname": "Deutsch (Fraktur Latin)"
       },
       {
-        "code": "dzo",
-        "englishName": "Dzongkha",
-        "nativeName": "རྫོང་ཁ"
+        "langcode": "dzo",
+        "language": "Dzongkha",
+        "localname": "རྫོང་ཁ"
       },
       {
-        "code": "ell",
-        "englishName": "Greek, Modern",
-        "nativeName": "Ελληνικά"
+        "langcode": "ell",
+        "language": "Greek, Modern",
+        "localname": "Ελληνικά"
       },
       {
-        "code": "eng",
-        "englishName": "English",
-        "nativeName": "English"
+        "langcode": "eng",
+        "language": "English",
+        "localname": "English"
       },
       {
-        "code": "enm",
-        "englishName": "English, Middle (1100-1500)",
-        "nativeName": "Middle English"
+        "langcode": "enm",
+        "language": "English, Middle (1100-1500)",
+        "localname": "Middle English"
       },
       {
-        "code": "epo",
-        "englishName": "Esperanto",
-        "nativeName": "Esperanto"
+        "langcode": "epo",
+        "language": "Esperanto",
+        "localname": "Esperanto"
       },
       {
-        "code": "est",
-        "englishName": "Estonian",
-        "nativeName": "Eesti"
+        "langcode": "est",
+        "language": "Estonian",
+        "localname": "Eesti"
       },
       {
-        "code": "eus",
-        "englishName": "Basque",
-        "nativeName": "Euskara"
+        "langcode": "eus",
+        "language": "Basque",
+        "localname": "Euskara"
       },
       {
-        "code": "fao",
-        "englishName": "Faroese",
-        "nativeName": "Føroyskt"
+        "langcode": "fao",
+        "language": "Faroese",
+        "localname": "Føroyskt"
       },
       {
-        "code": "fas",
-        "englishName": "Persian",
-        "nativeName": "فارسی"
+        "langcode": "fas",
+        "language": "Persian",
+        "localname": "فارسی"
       },
       {
-        "code": "fil",
-        "englishName": "Filipino",
-        "nativeName": "Filipino"
+        "langcode": "fil",
+        "language": "Filipino",
+        "localname": "Filipino"
       },
       {
-        "code": "fin",
-        "englishName": "Finnish",
-        "nativeName": "Suomi"
+        "langcode": "fin",
+        "language": "Finnish",
+        "localname": "Suomi"
       },
       {
-        "code": "fra",
-        "englishName": "French",
-        "nativeName": "Français"
+        "langcode": "fra",
+        "language": "French",
+        "localname": "Français"
       },
       {
-        "code": "frk",
-        "englishName": "German - Fraktur (old)",
-        "nativeName": "Deutsch (Fraktur alt)"
+        "langcode": "frk",
+        "language": "German - Fraktur (old)",
+        "localname": "Deutsch (Fraktur alt)"
       },
       {
-        "code": "fry",
-        "englishName": "Western Frisian",
-        "nativeName": "Frysk"
+        "langcode": "fry",
+        "language": "Western Frisian",
+        "localname": "Frysk"
       },
       {
-        "code": "gla",
-        "englishName": "Scottish Gaelic",
-        "nativeName": "Gàidhlig"
+        "langcode": "gla",
+        "language": "Scottish Gaelic",
+        "localname": "Gàidhlig"
       },
       {
-        "code": "gle",
-        "englishName": "Irish",
-        "nativeName": "Gaeilge"
+        "langcode": "gle",
+        "language": "Irish",
+        "localname": "Gaeilge"
       },
       {
-        "code": "glg",
-        "englishName": "Galician",
-        "nativeName": "Galego"
+        "langcode": "glg",
+        "language": "Galician",
+        "localname": "Galego"
       },
       {
-        "code": "grc",
-        "englishName": "Greek, Ancient (to 1453)",
-        "nativeName": "Ἑλληνική"
+        "langcode": "grc",
+        "language": "Greek, Ancient (to 1453)",
+        "localname": "Ἑλληνική"
       },
       {
-        "code": "guj",
-        "englishName": "Gujarati",
-        "nativeName": "ગુજરાતી"
+        "langcode": "guj",
+        "language": "Gujarati",
+        "localname": "ગુજરાતી"
       },
       {
-        "code": "hat",
-        "englishName": "Haitian Creole",
-        "nativeName": "Kreyòl ayisyen"
+        "langcode": "hat",
+        "language": "Haitian Creole",
+        "localname": "Kreyòl ayisyen"
       },
       {
-        "code": "heb",
-        "englishName": "Hebrew",
-        "nativeName": "עברית"
+        "langcode": "heb",
+        "language": "Hebrew",
+        "localname": "עברית"
       },
       {
-        "code": "hin",
-        "englishName": "Hindi",
-        "nativeName": "हिन्दी"
+        "langcode": "hin",
+        "language": "Hindi",
+        "localname": "हिन्दी"
       },
       {
-        "code": "hrv",
-        "englishName": "Croatian",
-        "nativeName": "Hrvatski"
+        "langcode": "hrv",
+        "language": "Croatian",
+        "localname": "Hrvatski"
       },
       {
-        "code": "hun",
-        "englishName": "Hungarian",
-        "nativeName": "Magyar"
+        "langcode": "hun",
+        "language": "Hungarian",
+        "localname": "Magyar"
       },
       {
-        "code": "hye",
-        "englishName": "Armenian",
-        "nativeName": "Հայերեն"
+        "langcode": "hye",
+        "language": "Armenian",
+        "localname": "Հայերեն"
       },
       {
-        "code": "iku",
-        "englishName": "Inuktitut",
-        "nativeName": "ᐃᓄᒃᑎᑐᑦ"
+        "langcode": "iku",
+        "language": "Inuktitut",
+        "localname": "ᐃᓄᒃᑎᑐᑦ"
       },
       {
-        "code": "ind",
-        "englishName": "Indonesian",
-        "nativeName": "Bahasa Indonesia"
+        "langcode": "ind",
+        "language": "Indonesian",
+        "localname": "Bahasa Indonesia"
       },
       {
-        "code": "isl",
-        "englishName": "Icelandic",
-        "nativeName": "Íslenska"
+        "langcode": "isl",
+        "language": "Icelandic",
+        "localname": "Íslenska"
       },
       {
-        "code": "ita",
-        "englishName": "Italian",
-        "nativeName": "Italiano"
+        "langcode": "ita",
+        "language": "Italian",
+        "localname": "Italiano"
       },
       {
-        "code": "ita_old",
-        "englishName": "Italian - Old",
-        "nativeName": "Italiano Antico"
+        "langcode": "ita_old",
+        "language": "Italian - Old",
+        "localname": "Italiano Antico"
       },
       {
-        "code": "jav",
-        "englishName": "Javanese",
-        "nativeName": "Basa Jawa"
+        "langcode": "jav",
+        "language": "Javanese",
+        "localname": "Basa Jawa"
       },
       {
-        "code": "jpn",
-        "englishName": "Japanese",
-        "nativeName": "日本語"
+        "langcode": "jpn",
+        "language": "Japanese",
+        "localname": "日本語"
       },
       {
-        "code": "kan",
-        "englishName": "Kannada",
-        "nativeName": "ಕನ್ನಡ"
+        "langcode": "kan",
+        "language": "Kannada",
+        "localname": "ಕನ್ನಡ"
       },
       {
-        "code": "kat",
-        "englishName": "Georgian",
-        "nativeName": "ქართული"
+        "langcode": "kat",
+        "language": "Georgian",
+        "localname": "ქართული"
       },
       {
-        "code": "kat_old",
-        "englishName": "Georgian - Old",
-        "nativeName": "ძველი ქართული"
+        "langcode": "kat_old",
+        "language": "Georgian - Old",
+        "localname": "ძველი ქართული"
       },
       {
-        "code": "kaz",
-        "englishName": "Kazakh",
-        "nativeName": "Қазақ"
+        "langcode": "kaz",
+        "language": "Kazakh",
+        "localname": "Қазақ"
       },
       {
-        "code": "khm",
-        "englishName": "Central Khmer",
-        "nativeName": "ខ្មែរ"
+        "langcode": "khm",
+        "language": "Central Khmer",
+        "localname": "ខ្មែរ"
       },
       {
-        "code": "kir",
-        "englishName": "Kirghiz",
-        "nativeName": "Кыргыз"
+        "langcode": "kir",
+        "language": "Kirghiz",
+        "localname": "Кыргыз"
       },
       {
-        "code": "kmr",
-        "englishName": "Kurdish (Kurmanji)",
-        "nativeName": "Kurmancî"
+        "langcode": "kmr",
+        "language": "Kurdish (Kurmanji)",
+        "localname": "Kurmancî"
       },
       {
-        "code": "kor",
-        "englishName": "Korean",
-        "nativeName": "한국어"
+        "langcode": "kor",
+        "language": "Korean",
+        "localname": "한국어"
       },
       {
-        "code": "kor_vert",
-        "englishName": "Korean (vertical)",
-        "nativeName": "한국어 (세로)"
+        "langcode": "kor_vert",
+        "language": "Korean (vertical)",
+        "localname": "한국어 (세로)"
       },
       {
-        "code": "kur",
-        "englishName": "Kurdish",
-        "nativeName": "کوردی"
+        "langcode": "kur",
+        "language": "Kurdish",
+        "localname": "کوردی"
       },
       {
-        "code": "lao",
-        "englishName": "Lao",
-        "nativeName": "ລາວ"
+        "langcode": "lao",
+        "language": "Lao",
+        "localname": "ລາວ"
       },
       {
-        "code": "lat",
-        "englishName": "Latin",
-        "nativeName": "Latina"
+        "langcode": "lat",
+        "language": "Latin",
+        "localname": "Latina"
       },
       {
-        "code": "lav",
-        "englishName": "Latvian",
-        "nativeName": "Latviešu"
+        "langcode": "lav",
+        "language": "Latvian",
+        "localname": "Latviešu"
       },
       {
-        "code": "lit",
-        "englishName": "Lithuanian",
-        "nativeName": "Lietuvių"
+        "langcode": "lit",
+        "language": "Lithuanian",
+        "localname": "Lietuvių"
       },
       {
-        "code": "ltz",
-        "englishName": "Luxembourgish",
-        "nativeName": "Lëtzebuergesch"
+        "langcode": "ltz",
+        "language": "Luxembourgish",
+        "localname": "Lëtzebuergesch"
       },
       {
-        "code": "mal",
-        "englishName": "Malayalam",
-        "nativeName": "മലയാളം"
+        "langcode": "mal",
+        "language": "Malayalam",
+        "localname": "മലയാളം"
       },
       {
-        "code": "mar",
-        "englishName": "Marathi",
-        "nativeName": "मराठी"
+        "langcode": "mar",
+        "language": "Marathi",
+        "localname": "मराठी"
       },
       {
-        "code": "mkd",
-        "englishName": "Macedonian",
-        "nativeName": "Македонски"
+        "langcode": "mkd",
+        "language": "Macedonian",
+        "localname": "Македонски"
       },
       {
-        "code": "mlt",
-        "englishName": "Maltese",
-        "nativeName": "Malti"
+        "langcode": "mlt",
+        "language": "Maltese",
+        "localname": "Malti"
       },
       {
-        "code": "mon",
-        "englishName": "Mongolian",
-        "nativeName": "Монгол"
+        "langcode": "mon",
+        "language": "Mongolian",
+        "localname": "Монгол"
       },
       {
-        "code": "mri",
-        "englishName": "Maori",
-        "nativeName": "Māori"
+        "langcode": "mri",
+        "language": "Maori",
+        "localname": "Māori"
       },
       {
-        "code": "msa",
-        "englishName": "Malay",
-        "nativeName": "Bahasa Melayu"
+        "langcode": "msa",
+        "language": "Malay",
+        "localname": "Bahasa Melayu"
       },
       {
-        "code": "mya",
-        "englishName": "Burmese",
-        "nativeName": "မြန်မာစာ"
+        "langcode": "mya",
+        "language": "Burmese",
+        "localname": "မြန်မာစာ"
       },
       {
-        "code": "nep",
-        "englishName": "Nepali",
-        "nativeName": "नेपाली"
+        "langcode": "nep",
+        "language": "Nepali",
+        "localname": "नेपाली"
       },
       {
-        "code": "nld",
-        "englishName": "Dutch",
-        "nativeName": "Nederlands"
+        "langcode": "nld",
+        "language": "Dutch",
+        "localname": "Nederlands"
       },
       {
-        "code": "nor",
-        "englishName": "Norwegian",
-        "nativeName": "Norsk"
+        "langcode": "nor",
+        "language": "Norwegian",
+        "localname": "Norsk"
       },
       {
-        "code": "oci",
-        "englishName": "Occitan",
-        "nativeName": "Occitan"
+        "langcode": "oci",
+        "language": "Occitan",
+        "localname": "Occitan"
       },
       {
-        "code": "ori",
-        "englishName": "Oriya",
-        "nativeName": "ଓଡ଼ିଆ"
+        "langcode": "ori",
+        "language": "Oriya",
+        "localname": "ଓଡ଼ିଆ"
       },
       {
-        "code": "pan",
-        "englishName": "Punjabi",
-        "nativeName": "ਪੰਜਾਬੀ"
+        "langcode": "pan",
+        "language": "Punjabi",
+        "localname": "ਪੰਜਾਬੀ"
       },
       {
-        "code": "pol",
-        "englishName": "Polish",
-        "nativeName": "Polski"
+        "langcode": "pol",
+        "language": "Polish",
+        "localname": "Polski"
       },
       {
-        "code": "por",
-        "englishName": "Portuguese",
-        "nativeName": "Português"
+        "langcode": "por",
+        "language": "Portuguese",
+        "localname": "Português"
       },
       {
-        "code": "pus",
-        "englishName": "Pushto",
-        "nativeName": "پښتو"
+        "langcode": "pus",
+        "language": "Pushto",
+        "localname": "پښتو"
       },
       {
-        "code": "que",
-        "englishName": "Quechua",
-        "nativeName": "Runasimi"
+        "langcode": "que",
+        "language": "Quechua",
+        "localname": "Runasimi"
       },
       {
-        "code": "ron",
-        "englishName": "Romanian",
-        "nativeName": "Română"
+        "langcode": "ron",
+        "language": "Romanian",
+        "localname": "Română"
       },
       {
-        "code": "rus",
-        "englishName": "Russian",
-        "nativeName": "Русский"
+        "langcode": "rus",
+        "language": "Russian",
+        "localname": "Русский"
       },
       {
-        "code": "san",
-        "englishName": "Sanskrit",
-        "nativeName": "संस्कृतम्"
+        "langcode": "san",
+        "language": "Sanskrit",
+        "localname": "संस्कृतम्"
       },
       {
-        "code": "sin",
-        "englishName": "Sinhala",
-        "nativeName": "සිංහල"
+        "langcode": "sin",
+        "language": "Sinhala",
+        "localname": "සිංහල"
       },
       {
-        "code": "spa",
-        "englishName": "Spanish",
-        "nativeName": "Español"
+        "langcode": "spa",
+        "language": "Spanish",
+        "localname": "Español"
       },
       {
-        "code": "spa_old",
-        "englishName": "Spanish - Old",
-        "nativeName": "Español Antiguo"
+        "langcode": "spa_old",
+        "language": "Spanish - Old",
+        "localname": "Español Antiguo"
       },
       {
-        "code": "sqi",
-        "englishName": "Albanian",
-        "nativeName": "Shqip"
+        "langcode": "sqi",
+        "language": "Albanian",
+        "localname": "Shqip"
       },
       {
-        "code": "srp",
-        "englishName": "Serbian",
-        "nativeName": "Српски"
+        "langcode": "srp",
+        "language": "Serbian",
+        "localname": "Српски"
       },
       {
-        "code": "srp_latn",
-        "englishName": "Serbian - Latin",
-        "nativeName": "Srpski"
+        "langcode": "srp_latn",
+        "language": "Serbian - Latin",
+        "localname": "Srpski"
       },
       {
-        "code": "sun",
-        "englishName": "Sundanese",
-        "nativeName": "Basa Sunda"
+        "langcode": "sun",
+        "language": "Sundanese",
+        "localname": "Basa Sunda"
       },
       {
-        "code": "swa",
-        "englishName": "Swahili",
-        "nativeName": "Kiswahili"
+        "langcode": "swa",
+        "language": "Swahili",
+        "localname": "Kiswahili"
       },
       {
-        "code": "swe",
-        "englishName": "Swedish",
-        "nativeName": "Svenska"
+        "langcode": "swe",
+        "language": "Swedish",
+        "localname": "Svenska"
       },
       {
-        "code": "syr",
-        "englishName": "Syriac",
-        "nativeName": "ܣܘܪܝܝܐ"
+        "langcode": "syr",
+        "language": "Syriac",
+        "localname": "ܣܘܪܝܝܐ"
       },
       {
-        "code": "tam",
-        "englishName": "Tamil",
-        "nativeName": "தமிழ்"
+        "langcode": "tam",
+        "language": "Tamil",
+        "localname": "தமிழ்"
       },
       {
-        "code": "tat",
-        "englishName": "Tatar",
-        "nativeName": "Татар"
+        "langcode": "tat",
+        "language": "Tatar",
+        "localname": "Татар"
       },
       {
-        "code": "tel",
-        "englishName": "Telugu",
-        "nativeName": "తెలుగు"
+        "langcode": "tel",
+        "language": "Telugu",
+        "localname": "తెలుగు"
       },
       {
-        "code": "tgk",
-        "englishName": "Tajik",
-        "nativeName": "Тоҷикӣ"
+        "langcode": "tgk",
+        "language": "Tajik",
+        "localname": "Тоҷикӣ"
       },
       {
-        "code": "tgl",
-        "englishName": "Tagalog",
-        "nativeName": "Tagalog"
+        "langcode": "tgl",
+        "language": "Tagalog",
+        "localname": "Tagalog"
       },
       {
-        "code": "tha",
-        "englishName": "Thai",
-        "nativeName": "ไทย"
+        "langcode": "tha",
+        "language": "Thai",
+        "localname": "ไทย"
       },
       {
-        "code": "tir",
-        "englishName": "Tigrinya",
-        "nativeName": "ትግርኛ"
+        "langcode": "tir",
+        "language": "Tigrinya",
+        "localname": "ትግርኛ"
       },
       {
-        "code": "ton",
-        "englishName": "Tonga",
-        "nativeName": "Lea Fakatonga"
+        "langcode": "ton",
+        "language": "Tonga",
+        "localname": "Lea Fakatonga"
       },
       {
-        "code": "tur",
-        "englishName": "Turkish",
-        "nativeName": "Türkçe"
+        "langcode": "tur",
+        "language": "Turkish",
+        "localname": "Türkçe"
       },
       {
-        "code": "uig",
-        "englishName": "Uyghur",
-        "nativeName": "ئۇيغۇرچە"
+        "langcode": "uig",
+        "language": "Uyghur",
+        "localname": "ئۇيغۇرچە"
       },
       {
-        "code": "ukr",
-        "englishName": "Ukrainian",
-        "nativeName": "Українська"
+        "langcode": "ukr",
+        "language": "Ukrainian",
+        "localname": "Українська"
       },
       {
-        "code": "urd",
-        "englishName": "Urdu",
-        "nativeName": "اردو"
+        "langcode": "urd",
+        "language": "Urdu",
+        "localname": "اردو"
       },
       {
-        "code": "uzb",
-        "englishName": "Uzbek",
-        "nativeName": "O'zbek"
+        "langcode": "uzb",
+        "language": "Uzbek",
+        "localname": "O'zbek"
       },
       {
-        "code": "uzb_cyrl",
-        "englishName": "Uzbek - Cyrillic",
-        "nativeName": "Ўзбек"
+        "langcode": "uzb_cyrl",
+        "language": "Uzbek - Cyrillic",
+        "localname": "Ўзбек"
       },
       {
-        "code": "vie",
-        "englishName": "Vietnamese",
-        "nativeName": "Tiếng Việt"
+        "langcode": "vie",
+        "language": "Vietnamese",
+        "localname": "Tiếng Việt"
       },
       {
-        "code": "yid",
-        "englishName": "Yiddish",
-        "nativeName": "ייִדיש"
+        "langcode": "yid",
+        "language": "Yiddish",
+        "localname": "ייִדיש"
       },
       {
         "code": "yor",
-        "englishName": "Yoruba",
-        "nativeName": "Yorùbá"
+        "language": "Yoruba",
+        "localname": "Yorùbá"
       }
     ]
   }

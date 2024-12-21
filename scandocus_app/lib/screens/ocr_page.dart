@@ -78,6 +78,8 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     final apiService = ApiService();
     final now = DateTime.now();
     final formatter = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    final finalDate = formatter.format(now);
+    final finalTime = getTimeOfDate(finalDate);
     final String imagePath;
     if (takenPicture != null) {
       imagePath = await apiService.uploadImage(File(image));
@@ -89,7 +91,8 @@ class _OcrProcessViewState extends State<OcrProcessView> {
       filename,
       text,
       language: language,
-      scanDate: formatter.format(now),
+      scanDate: finalDate,
+      scanTime: finalTime,
       imageUrl: imagePath,
       id: id,
       pageNumber: page,
@@ -137,18 +140,31 @@ class _OcrProcessViewState extends State<OcrProcessView> {
   }
 
   void _showLanguageDialog(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      backgroundColor: Color(0xFF202124),
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(16.0),
+        ),
+      ),
       builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Color(0xFF202124),
-          child: LanguageList(
-              currentLanguage: selectedLanguage,
-              languageSelected: (newLang) {
-                setState(() {
-                  selectedLanguage = newLang.code;
-                });
-              }),
+        return ClipRRect(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(16.0),
+          ),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            color: Colors.transparent,
+            child: LanguageList(
+                currentLanguage: selectedLanguage,
+                languageSelected: (newLang) {
+                  setState(() {
+                    selectedLanguage = newLang.langCode;
+                  });
+                }),
+          ),
         );
       },
     );
@@ -226,6 +242,21 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     } catch (e) {
       throw Exception('Fehler beim Herunterladen des Bildes: $e');
     }
+  }
+
+  //Get the time of the captured Date
+  String getTimeOfDate(String date) {
+    // Konvertiere den ISO-String in ein DateTime-Objekt
+    DateTime dateTime = DateTime.parse(date);
+
+    // Extrahiere die Uhrzeit und formatiere sie als String im gewünschten Format
+    String formattedTime =
+        "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+
+    // Gib den formatierten Zeitstring aus
+    print(formattedTime); // Ausgabe z.b.: "17:15"
+
+    return formattedTime;
   }
 
   @override
@@ -323,31 +354,6 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                         child: customImageWidget()),
                   ),
                 ),
-                // child: if (selectedImage != null &&
-                //     takenPicture == null &&
-                //     existingImage == null)
-                //   // Lokale Datei anzeigen, wenn ein ausgewähltes Bild vorhanden ist
-                //   Image.file(selectedImage!)
-                // else if (takenPicture != null &&
-                //     selectedImage == null &&
-                //     existingImage == null)
-                //   // Lokale Datei von der aufgenommenen Bild-URL anzeigen
-                //   Image.file(File(takenPicture!))
-                // else if (existingImage != null &&
-                //     takenPicture == null &&
-                //     selectedImage == null)
-
-                //   // Falls weder ein Bild noch ein Pfad angegeben ist, versuche, das Bild über eine URL anzuzeigen
-                //   Image.network(
-                //     imageUrl!,
-                //     errorBuilder: (context, error, stackTrace) {
-                //       // Fehlerbehandlung: Zeige ein Icon, wenn das Bild nicht geladen werden kann
-                //       return const Icon(Icons.error);
-                //     },
-                //   )
-                // else
-                //   // Wenn keine Bedingung zutrifft, zeige ein Icon für nicht unterstützte Inhalte
-                //   const Icon(Icons.image_not_supported),
               ),
               Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -355,47 +361,39 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    ClayContainer(
-                      spread: 3,
-                      surfaceColor: Color.fromARGB(219, 11, 185, 216),
-                      color: baseColor,
-                      borderRadius: 30,
-                      child: GestureDetector(
-                        onTap: () {
-                          print("Sprachbutton gedrückt");
-                          _showLanguageDialog(context);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.language,
-                                  color: Color(0xFF202124)),
-                              const SizedBox(width: 5.0),
-                              Text(selectedLanguage,
-                                  style: quicksandTextStyleButton),
-                            ],
-                          ),
-                        ),
-                        // icon: const Icon(Icons.language),
-                        // label: Text(selectedLanguage),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        print("Sprachbutton gedrückt");
+                        _showLanguageDialog(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(219, 11, 185, 216),
+                        elevation: 30,
+                        shadowColor: Color(0xFF202124),
+                        padding: EdgeInsets.all(10),
+                        overlayColor: const Color.fromARGB(255, 26, 255, 114)
+                            .withOpacity(0.7),
                       ),
+                      icon: Icon(
+                        Icons.language,
+                        color: Color(0xFF202124),
+                        size: 25.0,
+                      ),
+                      label: Text(selectedLanguage,
+                          style: quicksandTextStyleButton),
                     ),
                     SizedBox(width: 20),
-                    ClayContainer(
-                      spread: 3,
-                      surfaceColor: Color.fromARGB(219, 11, 185, 216),
-                      color: baseColor,
-                      borderRadius: 30,
-                      child: GestureDetector(
-                        onTap: performOCR,
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Text("Text scannen",
-                              style: quicksandTextStyleButton),
-                        ),
+                    ElevatedButton(
+                      onPressed: () {
+                        performOCR();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(219, 11, 185, 216),
+                        elevation: 15,
+                        padding: EdgeInsets.all(11),
                       ),
+                      child:
+                          Text("Text scannen", style: quicksandTextStyleButton),
                     ),
                   ],
                 ),
@@ -443,131 +441,96 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                     imageExists
                         ? Padding(
                             padding: const EdgeInsets.all(8.0),
-                            child: ClayContainer(
-                              spread: 3,
-                              surfaceColor: Color.fromARGB(219, 11, 185, 216),
-                              width: 220,
-                              color: baseColor,
-                              borderRadius: 30,
-                              child: GestureDetector(
-                                onTap: () {
-                                  updateDocument(
-                                      existingImage!,
-                                      existingId!,
-                                      existingFilename!,
-                                      showText,
-                                      selectedLanguage,
-                                      existingPage!);
-                                },
-                                child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.save,
-                                            color: Color(0xFF202124)),
-                                        const SizedBox(width: 5.0),
-                                        Text("Speichern",
-                                            style: quicksandTextStyleButton)
-                                      ],
-                                    )),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                updateDocument(
+                                    existingImage!,
+                                    existingId!,
+                                    existingFilename!,
+                                    showText,
+                                    selectedLanguage,
+                                    existingPage!);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Color.fromARGB(219, 11, 185, 216),
+                                elevation: 30,
+                                shadowColor: Color(0xFF202124),
+                                padding: EdgeInsets.all(10),
+                                overlayColor:
+                                    const Color.fromARGB(255, 26, 255, 114)
+                                        .withOpacity(0.7),
                               ),
+                              icon: Icon(
+                                Icons.save,
+                                color: Color(0xFF202124),
+                                size: 25.0,
+                              ),
+                              label: Text("Speichern",
+                                  style: quicksandTextStyleButton),
                             ),
                           )
                         : idExists
                             ? Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: ClayContainer(
-                                  spread: 3,
-                                  surfaceColor:
-                                      Color.fromARGB(219, 11, 185, 216),
-                                  width: 220,
-                                  color: baseColor,
-                                  borderRadius: 30,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      updateDocument(
-                                          takenPicture!,
-                                          existingId!,
-                                          existingFilename!,
-                                          showText,
-                                          selectedLanguage,
-                                          existingPage!);
-                                    },
-                                    child: Padding(
-                                        padding: const EdgeInsets.all(12),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.save,
-                                                color: Color(0xFF202124)),
-                                            const SizedBox(width: 5.0),
-                                            Text("Speichern",
-                                                style: quicksandTextStyleButton)
-                                          ],
-                                        )),
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    updateDocument(
+                                        takenPicture!,
+                                        existingId!,
+                                        existingFilename!,
+                                        showText,
+                                        selectedLanguage,
+                                        existingPage!);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Color.fromARGB(219, 11, 185, 216),
+                                    elevation: 30,
+                                    shadowColor: Color(0xFF202124),
+                                    padding: EdgeInsets.all(10),
+                                    overlayColor:
+                                        const Color.fromARGB(255, 26, 255, 114)
+                                            .withOpacity(0.7),
                                   ),
+                                  icon: Icon(
+                                    Icons.save,
+                                    color: Color(0xFF202124),
+                                    size: 25.0,
+                                  ),
+                                  label: Text("Speichern",
+                                      style: quicksandTextStyleButton),
                                 ),
                               )
                             : Padding(
                                 padding: const EdgeInsets.all(12.0),
-                                child: ClayContainer(
-                                  spread: 5,
-                                  surfaceColor:
-                                      Color.fromARGB(219, 11, 185, 216),
-                                  width: 220,
-                                  color: baseColor,
-                                  borderRadius: 30,
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      Navigator.pop(context, {
-                                        'scannedText': showText,
-                                        'selectedLanguage': selectedLanguage,
-                                      }); // Text zurückgeben
-                                      print("Verwenden Button gedrückt");
-                                    },
-                                    child: Padding(
-                                        padding: const EdgeInsets.all(12),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.check,
-                                                color: Color(0xFF202124)),
-                                            const SizedBox(width: 5.0),
-                                            Text("Verwenden",
-                                                style: quicksandTextStyleButton)
-                                          ],
-                                        )),
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    Navigator.pop(context, {
+                                      'scannedText': showText,
+                                      'selectedLanguage': selectedLanguage,
+                                    }); // Text zurückgeben
+                                    print("Verwenden Button gedrückt");
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Color.fromARGB(219, 11, 185, 216),
+                                    elevation: 30,
+                                    shadowColor: Color(0xFF202124),
+                                    padding: EdgeInsets.all(10),
+                                    overlayColor:
+                                        const Color.fromARGB(255, 26, 255, 114)
+                                            .withOpacity(0.7),
                                   ),
+                                  icon: Icon(
+                                    Icons.check,
+                                    color: Color(0xFF202124),
+                                    size: 25.0,
+                                  ),
+                                  label: Text("Verwenden",
+                                      style: quicksandTextStyleButton),
                                 ),
                               )
-                    // ? ElevatedButton.icon(
-                    //     onPressed: () {
-                    //       updateDocument(
-                    //           takenPicture!,
-                    //           existingId!,
-                    //           existingFilename!,
-                    //           showText,
-                    //           selectedLanguage,
-                    //           existingPage!);
-                    //     },
-                    //     icon: const Icon(Icons.save),
-                    //     label: Text("Speichern"),
-                    //   )
-                    // : ElevatedButton.icon(
-                    //     onPressed: () async {
-                    //       Navigator.pop(context, {
-                    //         'scannedText': showText,
-                    //         'selectedLanguage': selectedLanguage,
-                    //       }); // Text zurückgeben
-                    //       print("Verwenden Button gedrückt");
-                    //     },
-                    //     icon: const Icon(Icons.check),
-                    //     label: Text("Verwenden"),
-                    //   ),
                   ],
                 ),
               ),

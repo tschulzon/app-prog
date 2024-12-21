@@ -101,13 +101,16 @@ class ApiService {
 
       final response = await http.get(uri);
 
-      print(response);
+      print(response.body);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        return (data['docs'] as List)
-            .map((doc) => Document.fromJson(doc))
-            .toList();
+        List<dynamic> documents = data['docs'];
+        print("THIS ARE DOCUMENTS");
+        print(documents);
+        documents.sort((a, b) => b['scanDate'].compareTo(a['scanDate']));
+
+        return documents.map((doc) => Document.fromJson(doc)).toList();
       } else {
         print("Fehler: ${response.statusCode}");
         return [];

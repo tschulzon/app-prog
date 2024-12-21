@@ -59,99 +59,116 @@ class _DocumentOverviewState extends State<DocumentOverview> {
   }
 
   Future<void> sendDataToSolr() async {
-    setState(() {
-      isSending = true;
-    });
+    if (widget.session.pages.isNotEmpty) {
+      setState(() {
+        isSending = true;
+      });
 
-    // Überprüfe, ob Text vorhanden ist, bevor der Ladebalken angezeigt wird
-    bool hasScannedText =
-        widget.session.pages.every((page) => page.scannedText.isNotEmpty);
+      // Überprüfe, ob Text vorhanden ist, bevor der Ladebalken angezeigt wird
+      bool hasScannedText =
+          widget.session.pages.every((page) => page.scannedText.isNotEmpty);
 
-    if (hasScannedText) {
-      showDialog(
-        context: context,
-        barrierDismissible:
-            false, // Verhindere, dass der Benutzer den Dialog schließt
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: Color(0xFF0F1820),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Daten werden gespeichert...',
-                  style: GoogleFonts.quicksand(
-                    textStyle: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w400,
+      if (hasScannedText && isSending) {
+        showDialog(
+          context: context,
+          barrierDismissible:
+              false, // Verhindere, dass der Benutzer den Dialog schließt
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Color(0xFF0F1820),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Daten werden gespeichert...',
+                    style: GoogleFonts.quicksand(
+                      textStyle: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.0,
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
                   ),
+                  SizedBox(height: 20),
+                  ProgressIndicatorExample(), // Fortschrittsbalken
+                ],
+              ),
+            );
+          },
+        );
+      }
+
+      try {
+        print("Session Data");
+        print(widget.session);
+        // Textdaten und Bild-URL an Solr senden
+        final apiService = ApiService();
+        for (var page in widget.session.pages) {
+          // Bild hochladen und Pfad erhalten
+          final imagePath = await apiService.uploadImage(File(page.imagePath));
+          String currentFilename = existingFilename ?? widget.session.fileName;
+          int currentPage = newPage ?? page.pageNumber;
+          String documentTime = getTimeOfDate(page.captureDate);
+
+          if (page.scannedText.isNotEmpty) {
+            await apiService.sendDataToServer(
+              currentFilename,
+              page.scannedText, // Text aus OCR
+              language: page.language,
+              scanDate: page.captureDate,
+              scanTime: documentTime,
+              imageUrl: imagePath,
+              pageNumber: currentPage,
+            );
+          } else {
+            setState(() {
+              isSending = false;
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Es wurden noch nicht alle Texte gescanned!'),
+                  backgroundColor: const Color.fromARGB(
+                      238, 159, 29, 29), // Wähle eine rote Farbe für Fehler
+                  duration: Duration(seconds: 3), // Dauer der Anzeige
                 ),
-                SizedBox(height: 20),
-                ProgressIndicatorExample(), // Fortschrittsbalken
-              ],
-            ),
-          );
-        },
-      );
-    }
-
-    try {
-      print("Session Data");
-      print(widget.session);
-      // Textdaten und Bild-URL an Solr senden
-      final apiService = ApiService();
-      for (var page in widget.session.pages) {
-        // Bild hochladen und Pfad erhalten
-        final imagePath = await apiService.uploadImage(File(page.imagePath));
-        String currentFilename = existingFilename ?? widget.session.fileName;
-        int currentPage = page.pageNumber;
-        String documentTime = getTimeOfDate(page.captureDate);
-
-        if (page.scannedText.isNotEmpty) {
-          await apiService.sendDataToServer(
-            currentFilename,
-            page.scannedText, // Text aus OCR
-            language: page.language,
-            scanDate: page.captureDate,
-            scanTime: documentTime,
-            imageUrl: imagePath,
-            pageNumber: currentPage,
-          );
-        } else {
+              );
+            }
+            return;
+          }
+        }
+        // Nachdem alle Daten gesendet wurden, Dialog schließen und navigieren
+        if (mounted) {
           setState(() {
             isSending = false;
           });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Bitte scanne erst die Texte!'),
-                backgroundColor: Colors.red, // Wähle eine rote Farbe für Fehler
-                duration: Duration(seconds: 3), // Dauer der Anzeige
-              ),
-            );
-          }
-          return;
+          Navigator.pop(context); // Schließt den Dialog
+        }
+      } catch (e) {
+        print('Fehler beim Speichern und Senden: $e');
+      } finally {
+        if (mounted) {
+          setState(() {
+            isSending = false;
+          });
         }
       }
-    } catch (e) {
-      print('Fehler beim Speichern und Senden: $e');
-    } finally {
-      setState(() {
-        isSending = false;
-      });
-    }
 
-    if (mounted) {
-      Navigator.pop(context);
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-            builder: (context) =>
-                MyApp()), // Wieder zu MyApp, das AppBar und NavigationBar enthält
-        (Route<dynamic> route) => false, // Entfernt alle anderen Routen
+      if (mounted && isSending == false) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Es sind keine Seiten vorhanden!'),
+          backgroundColor: const Color.fromARGB(
+              238, 159, 29, 29), // Wähle eine rote Farbe für Fehler
+          duration: Duration(seconds: 3), // Dauer der Anzeige
+        ),
       );
     }
   }
@@ -365,8 +382,8 @@ class _DocumentOverviewState extends State<DocumentOverview> {
                                     print('Seite $index wurde gelöscht');
                                   },
                                   child: Container(
-                                    width: 25,
-                                    height: 25,
+                                    width: 30,
+                                    height: 30,
                                     decoration: BoxDecoration(
                                       color: const Color.fromARGB(
                                           238, 159, 29, 29),
@@ -383,7 +400,7 @@ class _DocumentOverviewState extends State<DocumentOverview> {
                                     child: Icon(
                                       Icons.delete,
                                       color: Colors.white,
-                                      size: 13,
+                                      size: 15,
                                     ),
                                   ),
                                 ),
@@ -427,30 +444,57 @@ class _DocumentOverviewState extends State<DocumentOverview> {
           ),
         ],
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: ClayContainer(
-          depth: 13,
-          spread: 5,
-          surfaceColor: Color.fromARGB(219, 11, 185, 216),
-          width: 200,
-          color: baseColor,
-          borderRadius: 30,
-          child: GestureDetector(
-            onTap: () async {
-              await sendDataToSolr();
-            },
-            child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.save, color: Color(0xFF202124)),
-                    const SizedBox(width: 5.0),
-                    Text("Dokument speichern", style: quicksandTextStyleButton)
-                  ],
-                )),
-          ),
+      bottomNavigationBar: Container(
+        color: Colors.transparent,
+        padding: EdgeInsets.all(8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () async {
+                await sendDataToSolr();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color.fromARGB(219, 11, 185, 216),
+                elevation: 30,
+                shadowColor: Color(0xFF202124),
+                padding: EdgeInsets.all(10),
+                overlayColor:
+                    const Color.fromARGB(255, 26, 255, 114).withOpacity(0.7),
+              ),
+              icon: Icon(
+                Icons.save,
+                color: Color(0xFF202124),
+                size: 25.0,
+              ),
+              label: Text("Speichern", style: quicksandTextStyleButton),
+            ),
+            SizedBox(width: 10),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomePage()),
+                  (Route<dynamic> route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color.fromARGB(219, 11, 185, 216),
+                elevation: 30,
+                shadowColor: Color(0xFF202124),
+                padding: EdgeInsets.all(10),
+                overlayColor:
+                    const Color.fromARGB(255, 26, 255, 114).withOpacity(0.7),
+              ),
+              icon: Icon(
+                Icons.close,
+                color: Color(0xFF202124),
+                size: 25.0,
+              ),
+              label: Text("Abbrechen", style: quicksandTextStyleButton),
+            ),
+          ],
         ),
       ),
     );

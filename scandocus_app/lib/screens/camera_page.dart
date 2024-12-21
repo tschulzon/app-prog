@@ -52,7 +52,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   File? selectedImage; // Ausgewähltes Bild als Datei
   late String? existingFilename;
   late int? newPage;
-  late bool? replaceImage;
+  late bool replaceImage = false;
   late String? existingId;
   late int? existingPage;
 
@@ -67,7 +67,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     final fileName = "Dokument_$formattedDate";
     existingFilename = widget.existingFilename;
     newPage = widget.newPage;
-    replaceImage = widget.replaceImage;
+    replaceImage = widget.replaceImage ?? false;
     existingId = widget.existingId;
     existingPage = widget.existingPage;
 
@@ -89,7 +89,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 
     try {
       final pictures = await CunningDocumentScanner.getPictures(
-            noOfPages: replaceImage != null ? 1 : 10,
+            noOfPages: replaceImage == true ? 1 : 10,
             isGalleryImportAllowed: true,
           ) ??
           [];
@@ -97,8 +97,9 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 
       if (pictures.isNotEmpty) {
         setState(() {
-          if (replaceImage != null) {
+          if (replaceImage == true) {
             imagePath = pictures[0];
+            _pictures = pictures;
           } else {
             _pictures = pictures;
           }
@@ -109,8 +110,9 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         // Format: YYYY-MM-DDTHH:mm:ss.SSSZ
         final formatter = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-        if (replaceImage != null) {
-          Navigator.pushAndRemoveUntil(
+        if (replaceImage == true) {
+          if (!mounted) return;
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => OcrProcessView(
@@ -120,7 +122,6 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                   replaceImage: replaceImage,
                   existingPage: existingPage),
             ),
-            (Route<dynamic> route) => false,
           );
         } else {
           for (var picture in _pictures) {
@@ -131,7 +132,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             ));
           }
 
-          Navigator.pushAndRemoveUntil(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => DocumentOverview(
@@ -139,7 +140,6 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                   existingFilename: existingFilename,
                   newPage: newPage),
             ),
-            (Route<dynamic> route) => false,
           );
         }
       } else {
@@ -158,40 +158,126 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(0), // Versteckt die AppBar
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0, // Setzt die AppBar auf unsichtbar
-        ),
-      ),
-      // You must wait until the controller is initialized before displaying the
-      // camera preview. Use a FutureBuilder to display a loading spinner until the
-      // controller has finished initializing.
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : Builder(
-              builder: (context) {
-                // Prüfe hier die Bedingung, z.B., keine Bilder aufgenommen
-                if (_pictures.isEmpty) {
-                  // Navigation zur anderen Seite auslösen
-                  Future.microtask(() {
-                    if (context.mounted) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MyApp(),
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(13.0),
+                    child: Text(
+                      Navigator.canPop(context)
+                          ? "Kamera wurde geschlossen.\n\nBitte zurück zur vorherigen Seite gehen."
+                          : "Kamera wurde geschlossen.\n\nBitte erneut öffnen oder wieder zur Hauptseite gehen.",
+                      style: GoogleFonts.quicksand(
+                        textStyle: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w500,
                         ),
-                      );
-                    }
-                  });
-                }
-
-                // UI anzeigen, wenn Bilder vorhanden sind
-                return Center(
-                  child: Text("Keine Bilder aufgenommen."),
-                );
-              },
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  SizedBox(height: 50),
+                  Navigator.canPop(context)
+                      ? ElevatedButton(
+                          onPressed: () {
+                            // Überprüfe, ob es eine Seite gibt, zu der zurückgegangen werden kann
+                            if (Navigator.canPop(context)) {
+                              Navigator.pop(context);
+                            } else {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => TakePictureScreen(),
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color.fromARGB(219, 11, 185,
+                                216), // Hintergrundfarbe des Buttons
+                            elevation: 15,
+                            overlayColor:
+                                const Color.fromARGB(255, 26, 255, 114)
+                                    .withOpacity(0.7),
+                          ),
+                          child: Text(
+                              Navigator.canPop(context)
+                                  ? "Zurück"
+                                  : "Kamera öffnen",
+                              style: GoogleFonts.quicksand(
+                                textStyle: TextStyle(
+                                  color: Color(0xFF202124),
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TakePictureScreen(),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Color.fromARGB(219, 11, 185, 216),
+                                elevation: 15,
+                                padding: EdgeInsets.all(12),
+                                overlayColor:
+                                    const Color.fromARGB(255, 26, 255, 114)
+                                        .withOpacity(0.7),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.camera_alt,
+                                color: Color(0xFF202124),
+                                size: 30.0,
+                              ),
+                            ),
+                            SizedBox(width: 20),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MyApp(),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Color.fromARGB(219, 11, 185, 216),
+                                elevation: 15,
+                                padding: EdgeInsets.all(12),
+                                overlayColor:
+                                    const Color.fromARGB(255, 26, 255, 114)
+                                        .withOpacity(0.7),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.house,
+                                color: Color(0xFF202124),
+                                size: 30.0,
+                              ),
+                            )
+                          ],
+                        ),
+                ],
+              ),
             ),
     );
   }
@@ -201,14 +287,15 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     String imagePath;
     try {
       pictures = await CunningDocumentScanner.getPictures(
-            noOfPages: replaceImage != null ? 1 : 10,
+            noOfPages: replaceImage == true ? 1 : 10,
             isGalleryImportAllowed: true,
           ) ??
           [];
       if (!mounted) return;
       setState(() {
-        if (replaceImage != null) {
+        if (replaceImage == true) {
           imagePath = pictures[0];
+          _pictures = pictures;
         } else {
           _pictures = pictures;
         }
@@ -217,7 +304,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       final now = DateTime.now();
       // Format: YYYY-MM-DDTHH:mm:ss.SSSZ
       final formatter = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-      if (replaceImage != null) {
+      if (replaceImage == true) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -239,7 +326,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
           ));
         }
 
-        Navigator.pushAndRemoveUntil(
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => DocumentOverview(
@@ -247,7 +334,6 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                 existingFilename: existingFilename,
                 newPage: newPage),
           ),
-          (Route<dynamic> route) => false,
         );
       }
     } catch (exception) {

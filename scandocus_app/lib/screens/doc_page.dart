@@ -23,6 +23,7 @@ class Detailpage extends StatefulWidget {
 
 class _DetailpageState extends State<Detailpage> {
   late Document doc;
+  late List<Document> documents = [];
   final String serverUrl = 'http://192.168.178.193:3000';
   // final String serverUrl = 'http://192.168.2.171:3000';
   // final String serverUrl = 'http://192.168.178.49:3000'; //eltern wlan
@@ -48,7 +49,7 @@ class _DetailpageState extends State<Detailpage> {
         .sort((a, b) => a.siteNumber.compareTo(b.siteNumber));
 
     //alle Seiten des Dokuments anhand des filenames bekommen
-    final documents = documentProvider.getDocumentsByFileName(doc.fileName);
+    documents = documentProvider.getDocumentsByFileName(doc.fileName);
 
     //Aktuelle seite zum anzeigen herholen
     currentIndex = documents.indexWhere((d) => d.id == doc.id);
@@ -74,114 +75,106 @@ class _DetailpageState extends State<Detailpage> {
         fontWeight: FontWeight.w400,
       ),
     );
-
-    return Consumer<DocumentProvider>(
-      builder: (context, documentProvider, child) {
-        // Hier holst du die Liste der Dokumente
-        final documents = documentProvider.getDocumentsByFileName(doc.fileName);
-
-        return Scaffold(
-          backgroundColor: baseColor,
-          appBar: AppBar(
-            forceMaterialTransparency: true,
-            title: Text('Seite ${documents[currentIndex].siteNumber}'),
-            titleTextStyle: quicksandTextStyleTitle,
-            centerTitle: true,
-            backgroundColor: baseColor,
-            iconTheme: const IconThemeData(
-              color:
-                  Color.fromARGB(219, 11, 185, 216), // Farbe des Zurück-Pfeils
-            ),
-          ),
-          body: documents.isNotEmpty
-              ? PageView.builder(
-                  controller: pageController,
-                  itemCount: documents.length,
-                  onPageChanged: (pageIndex) {
-                    // Wenn der Benutzer die Seite wechselt, kannst du den AppBar-Titel aktualisieren
-                    setState(() {
-                      currentIndex = pageIndex;
-                    });
-                  },
-                  itemBuilder: (context, index) {
-                    final currentDoc = documents[index];
-                    return SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Center(
-                          child: Column(
-                            children: [
-                              ClayContainer(
-                                depth: 13,
-                                spread: 5,
-                                color: baseColor,
-                                borderRadius: 20,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: currentDoc.image.isNotEmpty
-                                      ? Image.network(
-                                          '$serverUrl${currentDoc.image}',
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                            return const Icon(Icons.error);
-                                          },
-                                        )
-                                      : const Icon(Icons.image_not_supported),
-                                ),
-                              ),
-                              SizedBox(
-                                height: 20,
-                              ),
-                              ClayContainer(
-                                depth: 13,
-                                spread: 5,
-                                color: baseColor,
-                                borderRadius: 20,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        "Erkannter Text: ",
-                                        style: GoogleFonts.quicksand(
-                                          textStyle: TextStyle(
-                                            color: Color.fromARGB(
-                                                219, 11, 185, 216),
-                                            fontSize: 14.0,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 10),
-                                      Text(
-                                        currentDoc.docText.join('\n'),
-                                        textAlign: TextAlign.center,
-                                        style: quicksandTextStyle,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+    return Scaffold(
+      backgroundColor: baseColor,
+      appBar: AppBar(
+        forceMaterialTransparency: true,
+        title: Text('Seite ${documents[currentIndex].siteNumber}'),
+        titleTextStyle: quicksandTextStyleTitle,
+        centerTitle: true,
+        backgroundColor: baseColor,
+        iconTheme: const IconThemeData(
+          color: Color.fromARGB(219, 11, 185, 216), // Farbe des Zurück-Pfeils
+        ),
+      ),
+      body: documents.isNotEmpty
+          ? PageView.builder(
+              controller: pageController,
+              itemCount: documents.length,
+              onPageChanged: (pageIndex) {
+                // Wenn der Benutzer die Seite wechselt, kannst du den AppBar-Titel aktualisieren
+                setState(() {
+                  currentIndex = pageIndex;
+                });
+              },
+              itemBuilder: (context, index) {
+                final currentDoc = documents[index];
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          ClayContainer(
+                            depth: 13,
+                            spread: 5,
+                            color: baseColor,
+                            borderRadius: 20,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: currentDoc.image.isNotEmpty
+                                  ? Image.network(
+                                      '$serverUrl${currentDoc.image}',
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return const Icon(Icons.error);
+                                      },
+                                    )
+                                  : const Icon(Icons.image_not_supported),
+                            ),
                           ),
-                        ),
+                          SizedBox(
+                            height: 20,
+                          ),
+                          ClayContainer(
+                            depth: 13,
+                            spread: 5,
+                            color: baseColor,
+                            borderRadius: 20,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Erkannter Text: ",
+                                    style: GoogleFonts.quicksand(
+                                      textStyle: TextStyle(
+                                        color:
+                                            Color.fromARGB(219, 11, 185, 216),
+                                        fontSize: 14.0,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                  Text(
+                                    currentDoc.docText.join('\n'),
+                                    textAlign: TextAlign.center,
+                                    style: quicksandTextStyle,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                )
-              : Center(
-                  child: Text('Keine Dokumente vorhanden.'),
-                ),
-          bottomNavigationBar: BottomButtons(page: documents[currentIndex]),
-        );
-      },
+                    ),
+                  ),
+                );
+              },
+            )
+          : Center(
+              child: Text('Keine Dokumente vorhanden.'),
+            ),
+      bottomNavigationBar:
+          BottomButtons(page: documents[currentIndex], documents: documents),
     );
   }
 }
 
 class BottomButtons extends StatelessWidget {
-  const BottomButtons({super.key, required this.page});
-  // final List<Document> documents;
+  const BottomButtons({super.key, required this.page, required this.documents});
+  final List<Document> documents;
 
   final Document page;
 
@@ -247,65 +240,16 @@ class BottomButtons extends StatelessWidget {
                 tooltip: 'Dokument ersetzen',
                 icon: const Icon(Icons.flip_camera_ios),
                 onPressed: () {
-                  showModalBottomSheet(
-                    backgroundColor: Color(0xFF202124),
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(15.0),
-                            child: Text(
-                              "Seite ersetzen",
-                              style: GoogleFonts.quicksand(
-                                textStyle: TextStyle(
-                                  color: Color.fromARGB(219, 11, 185, 216),
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Divider(),
-                          ListTile(
-                            leading: Icon(Icons.camera),
-                            title: Text("Foto aufnehmen",
-                                style: quicksandTextStyleTitle),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TakePictureScreen(
-                                    existingFilename: page.fileName,
-                                    replaceImage: true,
-                                    existingId: page.id,
-                                    existingPage: page.siteNumber,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: Icon(Icons.perm_media),
-                            title: Text("Aus Galerie hochladen",
-                                style: quicksandTextStyleTitle),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => UploadImageScreen(
-                                    existingFilename: page.fileName,
-                                    replaceImage: true,
-                                    existingId: page.id,
-                                    existingPage: page.siteNumber,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      );
-                    },
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TakePictureScreen(
+                        existingFilename: page.fileName,
+                        replaceImage: true,
+                        existingId: page.id,
+                        existingPage: page.siteNumber,
+                      ),
+                    ),
                   );
                 },
               ),
@@ -326,25 +270,25 @@ class BottomButtons extends StatelessWidget {
                 tooltip: 'Seite löschen',
                 icon: const Icon(Icons.delete),
                 onPressed: () async {
-                  final documentProvider =
-                      Provider.of<DocumentProvider>(context, listen: false);
+                  // final documentProvider =
+                  //     Provider.of<DocumentProvider>(context, listen: false);
 
+                  documents.removeWhere((page) => page.id == this.page.id);
                   await apiService.deleteDocFromSolr(page.id, page.fileName);
-
-                  documentProvider.removeDocument(page.id);
-
-                  // Dokumentliste aktualisieren
-                  await documentProvider.fetchDocuments();
 
                   final SnackBar snackBar = SnackBar(
                     content: const Text('Dokument wurde gelöscht!'),
                   );
 
-                  // Find the ScaffoldMessenger in the widget tree
-                  // and use it to show a SnackBar.
-                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
-                  Navigator.pop(context);
+                    for (int i = 0; i < documents.length; i++) {
+                      documents[i].siteNumber = i + 1;
+                    }
+
+                    Navigator.pop(context, documents);
+                  }
                 },
               ),
             ),

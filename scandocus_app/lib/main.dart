@@ -12,13 +12,6 @@ import 'screens/home_page.dart';
 import 'utils/document_provider.dart';
 
 Future<void> main() async {
-  // Ensure that plugin services are initialized so that `availableCameras()`
-  // can be called before `runApp()`
-  // WidgetsFlutterBinding.ensureInitialized();
-
-  // Obtain a list of the available cameras on the device.
-  // final cameras = await availableCameras();
-
   // Start der App
   runApp(
     ChangeNotifierProvider(
@@ -29,8 +22,6 @@ Future<void> main() async {
 }
 
 class MyApp extends StatefulWidget {
-  // final List<CameraDescription> cameras;
-
   const MyApp({super.key});
 
   @override
@@ -38,26 +29,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  int _currentPageIndex = 0;
-
-  final List<Widget> _pages = [
-    DocumentsView(), // Hauptseite
-    TakePictureScreen(), // Kamera
-    UploadImageScreen(), // Galerie
-  ];
-
-  final List<String> _titles = [
-    'Dokumentenübersicht',
-    'Dokument aufnehmen',
-    'Aus Galerie hochladen',
-  ];
-
-  void _onDestinationSelected(int index) {
-    setState(() {
-      _currentPageIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     // SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
@@ -85,49 +56,7 @@ class _MyAppState extends State<MyApp> {
           backgroundColor: baseColor,
         ),
       ),
-      home: Scaffold(
-        backgroundColor: const Color(0xFF202124),
-        appBar: AppBar(
-            title: Text(
-              _titles[_currentPageIndex],
-              style: GoogleFonts.quicksand(
-                textStyle: TextStyle(
-                  color: Color.fromARGB(219, 11, 185, 216),
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            forceMaterialTransparency: true,
-            centerTitle: true,
-            backgroundColor: Color(0xFF202124)),
-        body: _pages[_currentPageIndex],
-        bottomNavigationBar: ClayContainer(
-          spread: 5,
-          // depth: 13,
-          color: baseColor,
-          child: NavigationBar(
-            height: 80,
-            backgroundColor: const Color(0xFF202124),
-            selectedIndex: _currentPageIndex,
-            onDestinationSelected: _onDestinationSelected,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.house),
-                label: 'Home',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.camera),
-                label: 'Kamera',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.perm_media),
-                label: 'Galerie',
-              ),
-            ],
-          ),
-        ),
-      ),
+      home: HomePage(),
     );
   }
 }

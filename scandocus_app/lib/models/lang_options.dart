@@ -1,20 +1,20 @@
 class LangOptions {
-  final String code;
-  final String englishName;
-  final String nativeName;
+  final String langCode;
+  final String language;
+  final String localName;
   bool isDownloaded;
 
   LangOptions(
-      {required this.code,
-      required this.englishName,
-      required this.nativeName,
+      {required this.langCode,
+      required this.language,
+      required this.localName,
       this.isDownloaded = false});
 
   factory LangOptions.fromJson(Map<String, dynamic> json) {
     return LangOptions(
-      code: json['code'],
-      englishName: json['englishName'],
-      nativeName: json['nativeName'],
+      langCode: json['code'],
+      language: json['englishName'],
+      localName: json['nativeName'],
       isDownloaded: json['isDownloaded'] ?? false,
     );
   }

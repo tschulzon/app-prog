@@ -14,19 +14,21 @@ class DocumentProvider with ChangeNotifier {
   Future<void> fetchDocuments() async {
     final apiService = ApiService();
     final newDocuments = await apiService.getSolrData();
+
+    // newDocuments.sort((a, b) => a.siteNumber.compareTo(b.siteNumber));
+
     _documents = newDocuments;
     notifyListeners(); // Benachrichtige alle Abonnenten
   }
 
   void setDocuments(List<Document> documents) {
+    // Dokumente alphabetisch sortieren, egal ob Groß oder Kleinbuchstaben
+    // documents.sort(
+    //     (a, b) => a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase()));
+    // documents.sort((a, b) => b.scanDate.compareTo(a.scanDate));
     _documents = documents;
     _filteredDocuments = []; // Filter zurücksetzen
     notifyListeners(); // Benachrichtige alle abhängigen Widgets, dass sich der Zustand geändert hat
-  }
-
-  void addDocument(Document document) {
-    _documents.add(document);
-    notifyListeners();
   }
 
   void removeDocument(String fileName) {
@@ -35,10 +37,13 @@ class DocumentProvider with ChangeNotifier {
   }
 
   List<Document> getDocumentsByFileName(String fileName) {
+    _documents.sort((a, b) => a.siteNumber.compareTo(b.siteNumber));
     return _documents.where((doc) => doc.fileName == fileName).toList();
   }
 
   void applyFilters(List<Document> filteredDocs, Map<String, String?> filters) {
+    filteredDocs.sort(
+        (a, b) => a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase()));
     _filteredDocuments = filteredDocs;
     _activeFilters = filters;
     notifyListeners();
@@ -53,7 +58,20 @@ class DocumentProvider with ChangeNotifier {
   Map<String, String?> get activeFilters => _activeFilters;
 
   void updateSearchedDocuments(List<Document> newDocuments) {
+    newDocuments.sort(
+        (a, b) => a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase()));
     _documents = newDocuments;
+    notifyListeners();
+  }
+
+  void updateDocumentSiteNumber(String documentId, int newSiteNumber) {
+    // Finde das Dokument anhand der ID
+    final document = _documents.firstWhere((doc) => doc.id == documentId);
+
+    // Ändere die Seitenzahl
+    document.siteNumber = newSiteNumber;
+
+    // Benachrichtige alle Abonnenten, damit die UI neu gerendert wird
     notifyListeners();
   }
 }

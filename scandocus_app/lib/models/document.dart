@@ -3,7 +3,7 @@ class Document {
   final String fileName;
   final String scanDate;
   final String scanTime;
-  final int siteNumber;
+  int siteNumber;
   final String language;
   final String image;
   final List<String> docText;
