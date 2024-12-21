@@ -7,8 +7,7 @@ class DocumentProvider with ChangeNotifier {
   List<Document> _filteredDocuments = [];
   Map<String, String?> _activeFilters = {};
 
-  List<Document> get documents =>
-      _filteredDocuments.isNotEmpty ? _filteredDocuments : _documents;
+  List<Document> get documents => _documents;
 
   // Methode: Dokumente neu laden
   Future<void> fetchDocuments() async {
@@ -44,14 +43,8 @@ class DocumentProvider with ChangeNotifier {
   void applyFilters(List<Document> filteredDocs, Map<String, String?> filters) {
     filteredDocs.sort(
         (a, b) => a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase()));
-    _filteredDocuments = filteredDocs;
+    _documents = filteredDocs;
     _activeFilters = filters;
-    notifyListeners();
-  }
-
-  void resetFilters() {
-    _filteredDocuments = [];
-    _activeFilters = {};
     notifyListeners();
   }
 

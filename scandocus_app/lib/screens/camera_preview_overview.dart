@@ -103,11 +103,13 @@ class _DocumentOverviewState extends State<DocumentOverview> {
         print(widget.session);
         // Textdaten und Bild-URL an Solr senden
         final apiService = ApiService();
-        for (var page in widget.session.pages) {
+        for (int i = 0; i < widget.session.pages.length; i++) {
           // Bild hochladen und Pfad erhalten
+          var page = widget.session.pages[i];
           final imagePath = await apiService.uploadImage(File(page.imagePath));
           String currentFilename = existingFilename ?? widget.session.fileName;
-          int currentPage = newPage ?? page.pageNumber;
+          int currentPage =
+              existingFilename != null ? (i + 1) + newPage! : i + 1;
           String documentTime = getTimeOfDate(page.captureDate);
 
           if (page.scannedText.isNotEmpty) {
@@ -417,7 +419,8 @@ class _DocumentOverviewState extends State<DocumentOverview> {
                             MaterialPageRoute(
                               builder: (context) => TakePictureScreen(
                                 session: widget.session,
-                                newPage: widget.session.pages.length + 1,
+                                existingFilename: widget.existingFilename,
+                                newPage: newPage,
                               ),
                             ),
                           );

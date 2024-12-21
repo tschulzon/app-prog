@@ -264,7 +264,6 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     String? imageUrl;
     bool imageExists = false;
     bool idExists = false;
-    int? samePage;
 
     // Bedingungen prüfen und Variablen setzen
     if (existingImage != null && existingImage!.isNotEmpty) {
@@ -280,20 +279,20 @@ class _OcrProcessViewState extends State<OcrProcessView> {
       if (selectedImage != null &&
           takenPicture == null &&
           existingImage == null) {
-        return Image.file(selectedImage!);
+        return Image.file(selectedImage!,
+            width: 300, height: 400, fit: BoxFit.cover);
       } else if (takenPicture != null &&
           selectedImage == null &&
           existingImage == null) {
-        return Image.file(File(takenPicture!));
+        return Image.file(File(takenPicture!),
+            width: 300, height: 400, fit: BoxFit.cover);
       } else if (existingImage != null &&
           takenPicture == null &&
           selectedImage == null) {
-        return Image.network(
-          imageUrl!,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.error);
-          },
-        );
+        return Image.network(imageUrl!,
+            errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.error);
+        }, width: 300, height: 400, fit: BoxFit.cover);
       } else {
         return const Icon(Icons.image_not_supported);
       }
@@ -344,6 +343,8 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                   depth: 13,
                   spread: 5,
                   borderRadius: 20,
+                  width: 300.0, // Feste Breite
+                  height: 400.0, // Feste Höhe
                   color: baseColor,
                   child: Container(
                     decoration: BoxDecoration(
@@ -428,7 +429,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(12.0),
-                              child: Text(
+                              child: SelectableText(
                                 showText, // Text anzeigen
                                 textAlign: TextAlign.center,
                                 style: quicksandTextStyle,

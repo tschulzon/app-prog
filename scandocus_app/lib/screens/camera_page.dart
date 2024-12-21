@@ -55,6 +55,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   late bool replaceImage = false;
   late String? existingId;
   late int? existingPage;
+  bool morePagesWithExistingFileNames = false;
 
   @override
   void initState() {
@@ -75,6 +76,11 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       currentSession = widget.session!;
     } else {
       currentSession = DocumentSession(fileName: fileName);
+    }
+
+    if (widget.session == null && widget.existingFilename != null) {
+      morePagesWithExistingFileNames = true;
+      currentSession = DocumentSession(fileName: widget.existingFilename!);
     }
 
     openCameraScanner();

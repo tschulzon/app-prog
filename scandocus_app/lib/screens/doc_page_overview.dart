@@ -122,7 +122,7 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                           MaterialPageRoute(
                             builder: (context) => TakePictureScreen(
                               existingFilename: widget.fileName,
-                              newPage: numberDocuments + 1,
+                              newPage: numberDocuments,
                             ),
                           ),
                         );

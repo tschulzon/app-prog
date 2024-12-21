@@ -4,9 +4,9 @@ class Document {
   final String scanDate;
   final String scanTime;
   int siteNumber;
-  final String language;
+  late final String language;
   final String image;
-  final List<String> docText;
+  late final List<String> docText;
 
   Document(
       {required this.id,

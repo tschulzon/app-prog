@@ -33,6 +33,8 @@ class _DocumentsViewState extends State<DocumentsView> {
   String? selectedLanguage;
   int? startSelectedPages;
   int? endSelectedPages;
+  bool activeFilter = false;
+  bool noFilteredDocs = false;
   final TextEditingController searchController = TextEditingController();
 
   @override
@@ -69,15 +71,14 @@ class _DocumentsViewState extends State<DocumentsView> {
       endDate: filters['endDate'],
       startTime: filters['startTime'],
       endTime: filters['endTime'],
-      // startPage: filters['startPage'],
-      // endPage: filters['endPage'],
       language: filters['language'],
     );
 
+    print("FILTERED DOCS");
+    print(filteredDocuments);
+
     final int? startPage = int.tryParse(filters['startPage'] ?? '');
     final int? endPage = int.tryParse(filters['endPage'] ?? '');
-
-    List<Document> documentsToDisplay;
 
     // Gruppiert Dokumente anhand ihrer Dateinamen und zählt die Gesamtanzahl der Seiten.
     Map<String, List<Document>> documentGroups = {};
@@ -95,7 +96,6 @@ class _DocumentsViewState extends State<DocumentsView> {
     // Überprüfen, ob Start- oder Endseite angegeben ist und Dokumente filtern.
     if (startPage != null && startPage > 0 || endPage != null && endPage > 0) {
       for (var entry in documentGroups.entries) {
-        String fileName = entry.key;
         List<Document> documents = entry.value;
 
         // Zählt die Gesamtanzahl der Seiten für das Dokument anhand der Gruppenanzahl.
@@ -123,6 +123,12 @@ class _DocumentsViewState extends State<DocumentsView> {
       filteredList = filteredDocuments;
     }
     if (mounted) {
+      if (filteredList.isEmpty) {
+        noFilteredDocs = true;
+      } else {
+        noFilteredDocs = false;
+      }
+
       Provider.of<DocumentProvider>(context, listen: false)
           .applyFilters(filteredList, filters);
     }
@@ -135,6 +141,9 @@ class _DocumentsViewState extends State<DocumentsView> {
 
       final documents = await ApiService()
           .searchDocuments(searchQuery); // Rufe die Ergebnisse ab
+
+      print("GEFILTERTE DOCUMENTS");
+      print(documents);
 
       if (mounted) {
         // Aktualisiere die Dokumente im Provider
@@ -257,8 +266,10 @@ class _DocumentsViewState extends State<DocumentsView> {
                   prefixIcon: const Icon(Icons.search,
                       color: Color.fromARGB(219, 11, 185, 216)),
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.filter_alt,
-                        color: Color.fromARGB(219, 11, 185, 216)),
+                    icon: Icon(Icons.filter_alt,
+                        color: !activeFilter
+                            ? Color.fromARGB(219, 11, 185, 216)
+                            : Color.fromARGB(255, 60, 221, 121)),
                     onPressed: () async {
                       // Zeige den Dialog an und erhalte die Rückgabewerte
                       final result =
@@ -267,21 +278,19 @@ class _DocumentsViewState extends State<DocumentsView> {
                         backgroundColor: Color(0xFF202124),
                         isScrollControlled: true,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(
-                                  16.0)), // Abgerundete Ecken oben
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(16.0)),
                         ),
                         builder: (BuildContext context) {
-                          // Übergebe die aktuellen Werte an den FilterDialog
                           return ClipRRect(
                             borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(
-                                  16.0), // Setze hier die Rundung für die Ecken
+                              top: Radius.circular(16.0),
                             ),
                             child: Container(
                               height: MediaQuery.of(context).size.height * 0.7,
                               color: Colors.transparent,
                               child: FilterDialog(
+                                //return current values to filterDialog
                                 initialStartDate: _startDate,
                                 initialEndDate: _endDate,
                                 initialStartTime: _startTime,
@@ -339,6 +348,12 @@ class _DocumentsViewState extends State<DocumentsView> {
                           } else {
                             endSelectedPages = null;
                           }
+
+                          if (result.isNotEmpty) {
+                            activeFilter = true;
+                          } else {
+                            activeFilter = false;
+                          }
                         });
 
                         applyFilters({
@@ -379,197 +394,211 @@ class _DocumentsViewState extends State<DocumentsView> {
         Expanded(
           child: isLoading
               ? Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  itemCount: uniqueDocuments.length,
-                  itemBuilder: (context, index) {
-                    final docInfo = uniqueDocuments[index];
-                    final fileName = docInfo["fileName"] as String;
-                    final pageCount = docInfo["count"] as int;
-                    final exampleDoc = docInfo["exampleDoc"] as Document;
-                    final relatedDocs = groupedDocuments[
-                        fileName]!; // Liste der zugehörigen Dokumente
-                    final String imageUrl =
-                        'http://192.168.178.193:3000${exampleDoc.image}'; // Bild-URL
-                    // final String imageUrl =
-                    //     'http://192.168.2.171:3000${exampleDoc.image}';
-                    // final String imageUrl =
-                    //     'http://192.168.178.49:3000${exampleDoc.image}';
+              : documents.isNotEmpty
+                  ? ListView.builder(
+                      itemCount: uniqueDocuments.length,
+                      itemBuilder: (context, index) {
+                        final docInfo = uniqueDocuments[index];
+                        final fileName = docInfo["fileName"] as String;
+                        final pageCount = docInfo["count"] as int;
+                        final exampleDoc = docInfo["exampleDoc"] as Document;
 
-                    return Padding(
-                      padding: const EdgeInsets.only(
-                          left: 12.0, right: 12.0, top: 15.0),
-                      child: ClayContainer(
-                        depth: 13,
-                        spread: 5,
-                        color: baseColor,
-                        height: 150,
-                        // width: 150,
-                        borderRadius: 20,
-                        child: Dismissible(
-                          key: Key(exampleDoc.id),
-                          direction: DismissDirection.endToStart,
-                          confirmDismiss: (direction) async {
-                            final bool confirm = await showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  backgroundColor: baseColor,
-                                  content: Text(
-                                      "Möchten Sie dieses Dokument wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
-                                      style: GoogleFonts.quicksand(
-                                        textStyle: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14.0,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      )),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context)
-                                            .pop(false); // Abbrechen
-                                      },
-                                      child: Text('Abbrechen',
-                                          style: GoogleFonts.quicksand()),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context)
-                                            .pop(true); // Abbrechen
-                                      },
-                                      child: Text('Löschen',
+                        final String imageUrl =
+                            'http://192.168.178.193:3000${exampleDoc.image}'; // Bild-URL
+                        // final String imageUrl =
+                        //     'http://192.168.2.171:3000${exampleDoc.image}';
+                        // final String imageUrl =
+                        //     'http://192.168.178.49:3000${exampleDoc.image}';
+
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                              left: 12.0, right: 12.0, top: 15.0),
+                          child: ClayContainer(
+                            depth: 13,
+                            spread: 5,
+                            color: baseColor,
+                            height: 150,
+                            // width: 150,
+                            borderRadius: 20,
+                            child: Dismissible(
+                              key: Key(exampleDoc.id),
+                              direction: DismissDirection.endToStart,
+                              confirmDismiss: (direction) async {
+                                final bool confirm = await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      backgroundColor: baseColor,
+                                      content: Text(
+                                          "Möchten Sie dieses Dokument wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
                                           style: GoogleFonts.quicksand(
                                             textStyle: TextStyle(
-                                                color: Color.fromARGB(
-                                                    255, 173, 57, 49),
-                                                fontWeight: FontWeight.w600),
+                                              color: Colors.white,
+                                              fontSize: 14.0,
+                                              fontWeight: FontWeight.w400,
+                                            ),
                                           )),
-                                    ),
-                                  ],
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context)
+                                                .pop(false); // Abbrechen
+                                          },
+                                          child: Text('Abbrechen',
+                                              style: GoogleFonts.quicksand()),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context)
+                                                .pop(true); // Abbrechen
+                                          },
+                                          child: Text('Löschen',
+                                              style: GoogleFonts.quicksand(
+                                                textStyle: TextStyle(
+                                                    color: Color.fromARGB(
+                                                        255, 173, 57, 49),
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                              )),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 );
+                                if (confirm) {
+                                  // Dokument löschen, wenn bestätigt
+                                  apiService.deleteManyDocsFromSolr(
+                                      exampleDoc.fileName);
+
+                                  documentProvider.removeDocument(fileName);
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'Dokument "$fileName" wurde gelöscht')),
+                                  );
+                                }
+
+                                return confirm; // Löschen nur, wenn bestätigt
                               },
-                            );
-                            if (confirm) {
-                              // Dokument löschen, wenn bestätigt
-                              apiService
-                                  .deleteManyDocsFromSolr(exampleDoc.fileName);
-
-                              documentProvider.removeDocument(fileName);
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(
-                                        'Dokument "$fileName" wurde gelöscht')),
-                              );
-                            }
-
-                            return confirm; // Löschen nur, wenn bestätigt
-                          },
-                          background: Container(
-                            color: const Color.fromARGB(255, 123, 42, 36),
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            child: const Icon(Icons.delete,
-                                color: Colors.white, size: 32),
-                          ),
-                          child: GestureDetector(
-                            onTap: () async {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DocumentPageOvereview(
-                                    fileName: fileName,
+                              background: Container(
+                                color: const Color.fromARGB(255, 123, 42, 36),
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                child: const Icon(Icons.delete,
+                                    color: Colors.white, size: 32),
+                              ),
+                              child: GestureDetector(
+                                onTap: () async {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          DocumentPageOvereview(
+                                        fileName: fileName,
+                                      ),
+                                    ),
+                                  ).then((_) {
+                                    searchController.clear();
+                                    loadDocuments(); // Suchleiste und Dokumente zurücksetzen
+                                  });
+                                },
+                                child: SizedBox(
+                                  height: 170,
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(10.0),
+                                        child: Container(
+                                          width: 90,
+                                          height: 160,
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(12.0),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.1),
+                                                  offset: Offset(0, 4),
+                                                  blurRadius: 4,
+                                                )
+                                              ]),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(12.0),
+                                            child: exampleDoc.image.isNotEmpty
+                                                ? Image.network(
+                                                    imageUrl,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
+                                                      return const Icon(
+                                                          Icons.error);
+                                                    },
+                                                  )
+                                                : const Icon(
+                                                    Icons.image_not_supported),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                fileName,
+                                                style: GoogleFonts.quicksand(
+                                                  textStyle: TextStyle(
+                                                    color: Color.fromARGB(
+                                                        219, 11, 185, 216),
+                                                    fontSize: 14.0,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ),
+                                              Text(
+                                                  'Scan-Datum: ${formatScanDate(exampleDoc.scanDate)}',
+                                                  style: quicksandTextStyle),
+                                              Text(
+                                                  'Scan-Uhrzeit: ${formatScanTime(exampleDoc.scanDate)}',
+                                                  style: quicksandTextStyle),
+                                              Text(
+                                                  'Sprache: ${exampleDoc.language}',
+                                                  style: quicksandTextStyle),
+                                              Text('Seitenzahl: $pageCount',
+                                                  style: quicksandTextStyle),
+                                              // const SizedBox(height: 8.0),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ).then((_) {
-                                searchController.clear();
-                                loadDocuments(); // Suchleiste und Dokumente zurücksetzen
-                              });
-                            },
-                            child: SizedBox(
-                              height: 170,
-                              child: Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(10.0),
-                                    child: Container(
-                                      width: 90,
-                                      height: 160,
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(12.0),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.1),
-                                              offset: Offset(0, 4),
-                                              blurRadius: 4,
-                                            )
-                                          ]),
-                                      child: ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                        child: exampleDoc.image.isNotEmpty
-                                            ? Image.network(
-                                                imageUrl,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error,
-                                                    stackTrace) {
-                                                  // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
-                                                  return const Icon(
-                                                      Icons.error);
-                                                },
-                                              )
-                                            : const Icon(
-                                                Icons.image_not_supported),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            fileName,
-                                            style: GoogleFonts.quicksand(
-                                              textStyle: TextStyle(
-                                                color: Color.fromARGB(
-                                                    219, 11, 185, 216),
-                                                fontSize: 14.0,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ),
-                                          Text(
-                                              'Scan-Datum: ${formatScanDate(exampleDoc.scanDate)}',
-                                              style: quicksandTextStyle),
-                                          Text(
-                                              'Scan-Uhrzeit: ${formatScanTime(exampleDoc.scanDate)}',
-                                              style: quicksandTextStyle),
-                                          Text(
-                                              'Sprache: ${exampleDoc.language}',
-                                              style: quicksandTextStyle),
-                                          Text('Seitenzahl: $pageCount',
-                                              style: quicksandTextStyle),
-                                          // const SizedBox(height: 8.0),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           ),
+                        );
+                      },
+                    )
+                  : Center(
+                      child: Text(
+                        'Keine Dokumente vorhanden.',
+                        style: GoogleFonts.quicksand(
+                          textStyle: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
                       ),
-                    );
-                  },
-                ),
+                    ),
         ),
       ],
     );

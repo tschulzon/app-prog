@@ -198,17 +198,11 @@ app.get('/search', async (req, res) => {
 app.get('/searchtext', async (req, res) => {
   const searchTerm = req.query.query;
 
-  var searchTermLow = searchTerm.toLowerCase();
-  var searchTermHigh = '*' + searchTerm.charAt(1).toUpperCase() + searchTerm.slice(2).toLowerCase();
-
-  console.log("SEARCHTERM");
-  console.log(searchTermHigh);
-
   try {
     // Solr-URL für die Abfrage (anpassen, je nach deiner Solr-Instanz)
     const solrResponse = await axios.get(`http://localhost:8983/solr/scan2doc/select`, {
       params: {
-        q: `(fileName:${searchTermLow} OR fileName:${searchTermHigh} OR docText:${searchTermLow} OR docText:${searchTermHigh})`,
+        q: `(fileName:${searchTerm} OR docText:${searchTerm})`,
         wt: 'json'
       }
     });

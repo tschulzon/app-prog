@@ -12,9 +12,9 @@ class LangOptions {
 
   factory LangOptions.fromJson(Map<String, dynamic> json) {
     return LangOptions(
-      langCode: json['code'],
-      language: json['englishName'],
-      localName: json['nativeName'],
+      langCode: json['langcode'],
+      language: json['language'],
+      localName: json['localname'],
       isDownloaded: json['isDownloaded'] ?? false,
     );
   }

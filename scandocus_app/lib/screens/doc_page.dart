@@ -110,11 +110,16 @@ class _DetailpageState extends State<Detailpage> {
                             spread: 5,
                             color: baseColor,
                             borderRadius: 20,
+                            width: 300.0, // Feste Breite
+                            height: 400.0, // Feste Höhe
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
                               child: currentDoc.image.isNotEmpty
                                   ? Image.network(
                                       '$serverUrl${currentDoc.image}',
+                                      width: 300,
+                                      height: 400,
+                                      fit: BoxFit.cover,
                                       errorBuilder:
                                           (context, error, stackTrace) {
                                         return const Icon(Icons.error);
@@ -147,7 +152,7 @@ class _DetailpageState extends State<Detailpage> {
                                     ),
                                   ),
                                   SizedBox(height: 10),
-                                  Text(
+                                  SelectableText(
                                     currentDoc.docText.join('\n'),
                                     textAlign: TextAlign.center,
                                     style: quicksandTextStyle,

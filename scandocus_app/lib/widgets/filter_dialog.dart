@@ -65,14 +65,6 @@ class _FilterDialogState extends State<FilterDialog> {
     startSelectedPages = widget.initialStartPageNumber;
     endSelectedPages = widget.initialEndPageNumber;
 
-    // // Erstelle Controller, lasse sie leer, wenn keine Zeit gesetzt ist
-    // startTimeController = TextEditingController(
-    //   text: startTime != null ? startTime!.format(context) : '',
-    // );
-    // endTimeController = TextEditingController(
-    //   text: endTime != null ? endTime!.format(context) : '',
-    // );
-
     startPageNumberController = TextEditingController(text: "");
 
     startPageNumberController.addListener(() {
@@ -465,28 +457,6 @@ class _FilterDialogState extends State<FilterDialog> {
                     size: 20.0,
                   ),
                 ),
-                // ClayContainer(
-                //   depth: 5,
-                //   spread: 5,
-                //   surfaceColor: Color.fromARGB(217, 214, 12, 12),
-                //   width: 50,
-                //   color: baseColor,
-                //   borderRadius: 30,
-                //   child: GestureDetector(
-                //     onTap: () async {
-                //       print("ResetButton gedrückt");
-                //       resetFilters();
-                //     },
-                //     child: Padding(
-                //         padding: const EdgeInsets.all(12),
-                //         child: Row(
-                //           mainAxisAlignment: MainAxisAlignment.center,
-                //           children: [
-                //             const Icon(Icons.close, color: Colors.white),
-                //           ],
-                //         )),
-                //   ),
-                // ),
                 SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () async {
@@ -552,70 +522,6 @@ class _FilterDialogState extends State<FilterDialog> {
                     size: 20.0,
                   ),
                 ),
-                // ClayContainer(
-                //   depth: 5,
-                //   spread: 5,
-                //   surfaceColor: Color.fromARGB(217, 12, 214, 113),
-                //   width: 50,
-                //   color: baseColor,
-                //   borderRadius: 30,
-                //   child: GestureDetector(
-                //     onTap: () async {
-                //       print("STARTDATUM:");
-                //       print(_startDate);
-                //       print("ENDDATUM:");
-                //       print(_endDate);
-                //       print("----------------------");
-                //       print("STARTZEIT:");
-                //       print(startTime);
-                //       print("ENDZEIT:");
-                //       print(endTime);
-                //       print("----------------------");
-                //       print("SPRACHE:");
-                //       print(selectedLanguage);
-                //       print("----------------------");
-                //       print("Seitenzahl Von:");
-                //       print(startSelectedPages);
-                //       print("Seitenzahl Bis:");
-                //       print(endSelectedPages);
-
-                //       // Filter-Map dynamisch erstellen
-                //       final filters = <String, dynamic>{};
-
-                //       if (_startDate != null) {
-                //         filters['startDate'] = _startDate;
-                //       }
-                //       if (_endDate != null) {
-                //         filters['endDate'] = _endDate;
-                //       }
-                //       if (startTime != null) {
-                //         filters['startTime'] = startTime;
-                //       }
-                //       if (endTime != null) {
-                //         filters['endTime'] = endTime;
-                //       }
-                //       if (selectedLanguage != null) {
-                //         filters['selectedLanguage'] = selectedLanguage;
-                //       }
-                //       if (startSelectedPages != null) {
-                //         filters['startSelectedPages'] = startSelectedPages;
-                //       }
-                //       if (endSelectedPages != null) {
-                //         filters['endSelectedPages'] = endSelectedPages;
-                //       }
-
-                //       Navigator.pop(context, filters);
-                //     },
-                //     child: Padding(
-                //         padding: const EdgeInsets.all(12),
-                //         child: Row(
-                //           mainAxisAlignment: MainAxisAlignment.center,
-                //           children: [
-                //             const Icon(Icons.check, color: Colors.white),
-                //           ],
-                //         )),
-                //   ),
-                // ),
               ],
             ),
           ],

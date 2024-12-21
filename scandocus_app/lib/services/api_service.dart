@@ -122,9 +122,19 @@ class ApiService {
   }
 
   Future<List<Document>> searchDocuments(String searchTerm) async {
+    String usedSearchTerm = searchTerm;
+
+    if (usedSearchTerm.contains(' ')) {
+      usedSearchTerm =
+          '"$searchTerm"'; // In doppelte Anführungszeichen setzen um ganze Sätze suchen zu können
+    }
+
+    print("USED TERM");
+    print(usedSearchTerm);
+
     final response = await http.get(
       Uri.parse(
-          'http://192.168.178.193:3000/searchtext?query=$searchTerm'), // Node.js-Serveradresse anpassen
+          'http://192.168.178.193:3000/searchtext?query=$usedSearchTerm'), // Node.js-Serveradresse anpassen
     );
 
     print("RESPONSE");
