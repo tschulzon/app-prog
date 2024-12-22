@@ -39,6 +39,46 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         //Visuelles Design wird erstellt
         useMaterial3: true,
+        timePickerTheme: TimePickerThemeData(
+          backgroundColor: baseColor, // Dunkler Hintergrund
+          hourMinuteTextColor: Color.fromARGB(
+              174, 11, 185, 216), // Weißer Text für Stunden und Minuten
+          dialHandColor: baseColor, // Blauer Zeiger
+          hourMinuteColor: baseColor, // Weiße Farbe für die Stunden und Minuten
+          hourMinuteShape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8), // Abgerundete Ecken
+            side: BorderSide(
+                color: Color.fromARGB(174, 11, 185, 216),
+                width: 2), // Rahmenfarbe und -breite
+          ),
+          dialBackgroundColor: Color.fromARGB(174, 11, 185, 216),
+          entryModeIconColor: Color.fromARGB(174, 11, 185, 216),
+          helpTextStyle: GoogleFonts.quicksand(
+            textStyle: TextStyle(
+              color: Color.fromARGB(219, 11, 185, 216),
+              fontSize: 16.0,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          cancelButtonStyle: TextButton.styleFrom(
+            foregroundColor: Color.fromARGB(
+                174, 11, 185, 216), // Textfarbe für den "Cancel"-Button
+            textStyle: TextStyle(
+              fontFamily: GoogleFonts.quicksand().fontFamily,
+              fontSize: 14, // Schriftgröße für "Cancel"
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          confirmButtonStyle: TextButton.styleFrom(
+            foregroundColor: Color.fromARGB(
+                255, 60, 221, 121), // Textfarbe für den "Cancel"-Button
+            textStyle: TextStyle(
+              fontFamily: GoogleFonts.quicksand().fontFamily,
+              fontSize: 14, // Schriftgröße für "Cancel"
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         navigationBarTheme: NavigationBarThemeData(
             backgroundColor: baseColor,
             indicatorColor: Color.fromARGB(219, 11, 185, 216),

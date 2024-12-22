@@ -155,6 +155,90 @@ class _DocumentsViewState extends State<DocumentsView> {
     }
   }
 
+  TextSpan highlightText(String text, String searchTerm) {
+    final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
+      textStyle: TextStyle(
+        color: Color.fromARGB(219, 11, 185, 216),
+        fontSize: 16.0,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+
+    final matches = searchTerm.toLowerCase();
+    final originalText = text.toLowerCase();
+
+    if (!originalText.contains(matches)) {
+      return TextSpan(text: text, style: quicksandTextStyle);
+    }
+
+    final index = originalText.indexOf(matches);
+    final beforeMatch = text.substring(0, index);
+    final match = text.substring(index, index + searchTerm.length);
+    final afterMatch = text.substring(index + searchTerm.length);
+
+    return TextSpan(
+      children: [
+        TextSpan(text: beforeMatch, style: quicksandTextStyle),
+        TextSpan(
+          text: match,
+          style: quicksandTextStyle.copyWith(
+              backgroundColor: Color.fromARGB(255, 60, 221, 121),
+              color: Color(0xFF202124),
+              fontWeight: FontWeight.bold),
+        ),
+        TextSpan(text: afterMatch, style: quicksandTextStyle),
+      ],
+    );
+  }
+
+  bool containsSearchTerm(String text, String searchTerm) {
+    return text.toLowerCase().contains(searchTerm.toLowerCase());
+  }
+
+  TextSpan getHighlightedSnippetWithHighlight(
+      String text, String searchTerm, TextStyle baseStyle) {
+    // Berechne den hervorgehobenen Ausschnitt
+    final matches = searchTerm.toLowerCase();
+    final originalText = text.toLowerCase();
+
+    if (!originalText.contains(matches)) {
+      return TextSpan(text: '', style: baseStyle);
+    }
+
+    final index = originalText.indexOf(matches);
+    final start = (index - 10 > 0) ? index - 10 : 0;
+    final end = (index + matches.length + 10 < text.length)
+        ? index + matches.length + 10
+        : text.length;
+
+    final snippet = text.substring(start, end);
+
+    // Teile den Ausschnitt in vor, Treffer, und nach dem Suchbegriff
+    final snippetLower = snippet.toLowerCase();
+    final matchIndex = snippetLower.indexOf(matches);
+
+    final beforeMatch = snippet.substring(0, matchIndex);
+    final match = snippet.substring(matchIndex, matchIndex + searchTerm.length);
+    final afterMatch = snippet.substring(matchIndex + searchTerm.length);
+
+    // Erstelle ein TextSpan mit Markierung
+    return TextSpan(
+      children: [
+        TextSpan(text: '...', style: baseStyle),
+        TextSpan(text: beforeMatch, style: baseStyle),
+        TextSpan(
+          text: match,
+          style: baseStyle.copyWith(
+              backgroundColor: Color.fromARGB(255, 60, 221, 121),
+              color: Color(0xFF202124),
+              fontWeight: FontWeight.bold),
+        ),
+        TextSpan(text: afterMatch, style: baseStyle),
+        TextSpan(text: '...', style: baseStyle),
+      ],
+    );
+  }
+
   String formatScanDate(String isoDate) {
     DateTime dateTime = DateTime.parse(isoDate);
     return DateFormat('dd-MM-yyyy').format(dateTime);
@@ -496,6 +580,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                                       builder: (context) =>
                                           DocumentPageOvereview(
                                         fileName: fileName,
+                                        searchTerm: searchController.text,
                                       ),
                                     ),
                                   ).then((_) {
@@ -504,14 +589,14 @@ class _DocumentsViewState extends State<DocumentsView> {
                                   });
                                 },
                                 child: SizedBox(
-                                  height: 170,
+                                  height: 200,
                                   child: Row(
                                     children: [
                                       Padding(
                                         padding: const EdgeInsets.all(10.0),
                                         child: Container(
                                           width: 90,
-                                          height: 160,
+                                          height: 200,
                                           decoration: BoxDecoration(
                                               borderRadius:
                                                   BorderRadius.circular(12.0),
@@ -551,17 +636,11 @@ class _DocumentsViewState extends State<DocumentsView> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                fileName,
-                                                style: GoogleFonts.quicksand(
-                                                  textStyle: TextStyle(
-                                                    color: Color.fromARGB(
-                                                        219, 11, 185, 216),
-                                                    fontSize: 14.0,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
+                                              RichText(
+                                                text: highlightText(fileName,
+                                                    searchController.text),
                                               ),
+
                                               Text(
                                                   'Scan-Datum: ${formatScanDate(exampleDoc.scanDate)}',
                                                   style: quicksandTextStyle),
@@ -573,7 +652,27 @@ class _DocumentsViewState extends State<DocumentsView> {
                                                   style: quicksandTextStyle),
                                               Text('Seitenzahl: $pageCount',
                                                   style: quicksandTextStyle),
-                                              // const SizedBox(height: 8.0),
+                                              // Highlighted matching text snippet
+                                              if (searchController
+                                                      .text.isNotEmpty &&
+                                                  containsSearchTerm(
+                                                      exampleDoc.docText
+                                                          .toString(),
+                                                      searchController.text))
+                                                RichText(
+                                                  text:
+                                                      getHighlightedSnippetWithHighlight(
+                                                    exampleDoc.docText
+                                                        .toString(),
+                                                    searchController.text,
+                                                    quicksandTextStyle.copyWith(
+                                                        color: Colors.white),
+                                                  ),
+                                                  maxLines:
+                                                      1, // Begrenze die Anzahl der Zeilen
+                                                  overflow: TextOverflow
+                                                      .ellipsis, // Zeigt "..." an, wenn der Text abgeschnitten wird
+                                                ),
                                             ],
                                           ),
                                         ),

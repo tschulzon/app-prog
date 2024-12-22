@@ -4,6 +4,9 @@ import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:scandocus_app/models/document.dart';
+import 'package:scandocus_app/utils/document_provider.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -12,9 +15,13 @@ import '../widgets/progress_bar.dart';
 
 class LanguageList extends StatefulWidget {
   final Function(LangOptions) languageSelected;
-  final String currentLanguage; // Aktuell ausgewählte Sprache
+  final String currentLanguage;
+  final bool activeFilter;
 
-  LanguageList({required this.languageSelected, required this.currentLanguage});
+  LanguageList(
+      {required this.languageSelected,
+      required this.currentLanguage,
+      required this.activeFilter});
 
   @override
   State<LanguageList> createState() => _LanguageListState();
@@ -89,11 +96,34 @@ class _LanguageListState extends State<LanguageList> {
     // Lade heruntergeladene Sprachen
     List<String> downloaded = await getDownloadedLanguages();
 
+    if (widget.activeFilter) {
+      final documentProvider =
+          Provider.of<DocumentProvider>(context, listen: false);
+      final fetchedDocuments = documentProvider.documents;
+
+      List<String> usedLanguages = [];
+      for (var doc in fetchedDocuments) {
+        usedLanguages.add(doc.language);
+      }
+
+      languages = languages
+          .where((lang) => usedLanguages.contains(lang.langCode))
+          .toList();
+    }
+
     // Sortiere die Liste so, dass heruntergeladene Sprachen oben erscheinen
     languages.sort((a, b) {
-      if (downloaded.contains(a.langCode)) return -1; // a kommt zuerst
-      if (downloaded.contains(b.langCode)) return 1; // b kommt zuerst
-      return 0; // Keine Änderung
+      // Überprüfe zuerst, ob a oder b heruntergeladen ist
+      if (downloaded.contains(a.langCode) && !downloaded.contains(b.langCode)) {
+        return -1; // a kommt zuerst, wenn a heruntergeladen ist, b aber nicht
+      }
+      if (!downloaded.contains(a.langCode) && downloaded.contains(b.langCode)) {
+        return 1; // b kommt zuerst, wenn b heruntergeladen ist, a aber nicht
+      }
+
+      // Wenn beide entweder heruntergeladen sind oder nicht, dann alphabetisch sortieren
+      return a.language
+          .compareTo(b.language); // Alphabetische Sortierung nach Sprachname
     });
 
     // Rückgabe der geladenen und sortierten Sprachen

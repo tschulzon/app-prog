@@ -18,10 +18,12 @@ import '../models/document.dart';
 
 class DocumentPageOvereview extends StatefulWidget {
   final String fileName; // Name der Datei (optional)
+  final String? searchTerm;
 
   const DocumentPageOvereview({
     super.key,
     required this.fileName,
+    this.searchTerm,
   });
 
   @override
@@ -30,12 +32,63 @@ class DocumentPageOvereview extends StatefulWidget {
 
 class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
   File? selectedImage;
+  late String? searchTerm;
+
+  @override
+  void initState() {
+    super.initState();
+    searchTerm = widget.searchTerm;
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Dokumente beim Betreten der Seite aktualisieren
     Provider.of<DocumentProvider>(context, listen: false).fetchDocuments();
+  }
+
+  TextSpan getHighlightedSnippetWithHighlight(
+      String text, String searchTerm, TextStyle baseStyle) {
+    // Berechne den hervorgehobenen Ausschnitt
+    final matches = searchTerm.toLowerCase();
+    final originalText = text.toLowerCase();
+
+    if (!originalText.contains(matches)) {
+      return TextSpan(text: '', style: baseStyle);
+    }
+
+    final index = originalText.indexOf(matches);
+    final start = (index - 8 > 0) ? index - 8 : 0;
+    final end = (index + matches.length + 8 < text.length)
+        ? index + matches.length + 8
+        : text.length;
+
+    final snippet = text.substring(start, end);
+
+    // Teile den Ausschnitt in vor, Treffer, und nach dem Suchbegriff
+    final snippetLower = snippet.toLowerCase();
+    final matchIndex = snippetLower.indexOf(matches);
+
+    final beforeMatch = snippet.substring(0, matchIndex);
+    final match = snippet.substring(matchIndex, matchIndex + searchTerm.length);
+    final afterMatch = snippet.substring(matchIndex + searchTerm.length);
+
+    // Erstelle ein TextSpan mit Markierung
+    return TextSpan(
+      children: [
+        TextSpan(text: '...', style: baseStyle),
+        TextSpan(text: beforeMatch, style: baseStyle),
+        TextSpan(
+          text: match,
+          style: baseStyle.copyWith(
+              backgroundColor: Color.fromARGB(255, 60, 221, 121),
+              color: Color(0xFF202124),
+              fontWeight: FontWeight.bold),
+        ),
+        TextSpan(text: afterMatch, style: baseStyle),
+        TextSpan(text: '...', style: baseStyle),
+      ],
+    );
   }
 
   @override
@@ -45,6 +98,22 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
       textStyle: const TextStyle(
         color: Color.fromARGB(219, 11, 185, 216),
         fontSize: 16.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    final TextStyle quicksandTextStyleDocText = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Color.fromARGB(219, 11, 185, 216),
+        fontSize: 10.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    final TextStyle quicksandTextStyleSiteNumbers = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 12.0,
         fontWeight: FontWeight.w400,
       ),
     );
@@ -80,7 +149,7 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 20,
                   crossAxisCount: 2,
-                  childAspectRatio: 0.8,
+                  childAspectRatio: 0.7,
                   onReorder: (oldIndex, newIndex) {
                     print("in REORDER");
                     setState(() {
@@ -153,7 +222,8 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                         final updatedDocuments = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => Detailpage(document: doc),
+                            builder: (context) => Detailpage(
+                                document: doc, searchTerm: searchTerm),
                           ),
                         );
 
@@ -210,8 +280,38 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text('Seite ${doc.siteNumber}',
-                                    style: TextStyle(color: Colors.white)),
+                                child: Column(
+                                  children: [
+                                    Text('Seite ${doc.siteNumber}',
+                                        style: quicksandTextStyleSiteNumbers),
+                                    SizedBox(height: 10),
+                                    searchTerm != "" &&
+                                            doc.docText
+                                                .toString()
+                                                .toLowerCase()
+                                                .contains(
+                                                    searchTerm!.toLowerCase())
+                                        ? RichText(
+                                            text:
+                                                getHighlightedSnippetWithHighlight(
+                                              doc.docText.toString(),
+                                              searchTerm!,
+                                              quicksandTextStyleDocText,
+                                            ),
+                                          )
+                                        : Text(
+                                            doc.docText
+                                                .join(' ')
+                                                .replaceAll('\n', ' '),
+                                            style: quicksandTextStyleDocText,
+                                            maxLines:
+                                                1, // Begrenze die Anzahl der Zeilen
+                                            overflow: TextOverflow
+                                                .ellipsis, // Zeigt "..." an, wenn der Text abgeschnitten wird
+                                            textAlign: TextAlign.start,
+                                          ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),

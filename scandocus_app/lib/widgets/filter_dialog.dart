@@ -113,7 +113,8 @@ class _FilterDialogState extends State<FilterDialog> {
           ? DateTimeRange(start: _startDate!, end: _endDate!)
           : null,
       firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      lastDate: DateTime.now(),
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: ThemeData.dark().copyWith(
@@ -176,7 +177,8 @@ class _FilterDialogState extends State<FilterDialog> {
                 setState(() {
                   selectedLanguage = newLang.langCode;
                 });
-              }),
+              },
+              activeFilter: true),
         );
       },
     );
@@ -320,9 +322,7 @@ class _FilterDialogState extends State<FilterDialog> {
                           onTap: () async {
                             final TimeOfDay? pickedTime = await showTimePicker(
                               context: context,
-                              initialTime: startTime ??
-                                  TimeOfDay
-                                      .now(), // Nutze die zuletzt ausgewählte Zeit
+                              initialTime: startTime ?? TimeOfDay.now(),
                             );
 
                             if (pickedTime != null && pickedTime != startTime) {
@@ -351,9 +351,11 @@ class _FilterDialogState extends State<FilterDialog> {
                           onTap: () async {
                             final TimeOfDay? pickedTime = await showTimePicker(
                               context: context,
-                              initialTime: endTime ??
-                                  TimeOfDay
-                                      .now(), // Nutze die zuletzt ausgewählte Zeit
+                              initialTime: endTime ?? TimeOfDay.now(),
+                              helpText: "Uhrzeit auswählen",
+                              cancelText: "Abbrechen",
+                              hourLabelText: "",
+                              minuteLabelText: "",
                             );
 
                             if (pickedTime != null && pickedTime != endTime) {

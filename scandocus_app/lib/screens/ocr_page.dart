@@ -53,7 +53,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
   late int? existingPage;
   late bool? replaceImage;
   var showText = "Hier wird Text angezeigt";
-  String selectedLanguage = "eng";
+  String selectedLanguage = "-";
 
   bool isDownloading = false;
   bool isScanning = false;
@@ -163,7 +163,8 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                   setState(() {
                     selectedLanguage = newLang.langCode;
                   });
-                }),
+                },
+                activeFilter: false),
           ),
         );
       },

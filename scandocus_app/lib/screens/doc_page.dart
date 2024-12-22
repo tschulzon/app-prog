@@ -13,9 +13,9 @@ import '../utils/document_provider.dart';
 
 class Detailpage extends StatefulWidget {
   final Document document;
-  // final List<Document> documents;
+  final String? searchTerm;
 
-  const Detailpage({super.key, required this.document});
+  const Detailpage({super.key, required this.document, this.searchTerm});
 
   @override
   State<Detailpage> createState() => _DetailpageState();
@@ -29,6 +29,8 @@ class _DetailpageState extends State<Detailpage> {
   // final String serverUrl = 'http://192.168.178.49:3000'; //eltern wlan
 
   late PageController pageController;
+  String? searchTerm;
+
   int currentIndex = 0;
 
   @override
@@ -55,6 +57,69 @@ class _DetailpageState extends State<Detailpage> {
     currentIndex = documents.indexWhere((d) => d.id == doc.id);
 
     pageController = PageController(initialPage: currentIndex);
+
+    if (widget.searchTerm != null) {
+      searchTerm = widget.searchTerm;
+    }
+  }
+
+  TextSpan highlightSearchTerm(String text, String? searchTerm) {
+    final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 12.0,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    // Wenn der searchTerm null oder leer ist, gibt es keine Markierung
+    if (searchTerm == null || searchTerm.isEmpty) {
+      return TextSpan(text: text, style: quicksandTextStyle);
+    }
+
+    final matches = searchTerm.toLowerCase();
+    final originalText = text.toLowerCase();
+
+    if (!originalText.contains(matches)) {
+      return TextSpan(text: text, style: quicksandTextStyle);
+    }
+
+    List<TextSpan> textSpans = [];
+    int startIndex = 0;
+
+    while (startIndex < text.length) {
+      final index = originalText.indexOf(matches, startIndex);
+      if (index == -1) {
+        textSpans.add(TextSpan(
+          text: text.substring(startIndex),
+          style: quicksandTextStyle,
+        ));
+        break;
+      }
+
+      // Text vor dem Treffer
+      if (index > startIndex) {
+        textSpans.add(TextSpan(
+          text: text.substring(startIndex, index),
+          style: quicksandTextStyle,
+        ));
+      }
+
+      // Markierter Text
+      textSpans.add(
+        TextSpan(
+          text: text.substring(index, index + searchTerm.length),
+          style: quicksandTextStyle.copyWith(
+              backgroundColor: Color.fromARGB(255, 60, 221, 121),
+              color: Color(0xFF202124),
+              fontWeight: FontWeight.bold),
+        ),
+      );
+
+      startIndex = index + searchTerm.length;
+    }
+
+    return TextSpan(children: textSpans);
   }
 
   @override
@@ -152,11 +217,24 @@ class _DetailpageState extends State<Detailpage> {
                                     ),
                                   ),
                                   SizedBox(height: 10),
-                                  SelectableText(
-                                    currentDoc.docText.join('\n'),
+                                  // SelectableText(
+                                  //   currentDoc.docText.join('\n'),
+                                  //   textAlign: TextAlign.center,
+                                  //   style: quicksandTextStyle,
+                                  // ),
+                                  SelectableText.rich(
+                                    TextSpan(
+                                      children: [
+                                        highlightSearchTerm(
+                                          currentDoc.docText
+                                              .join(' ')
+                                              .replaceAll('\n', ' '),
+                                          searchTerm,
+                                        ),
+                                      ],
+                                    ),
                                     textAlign: TextAlign.center,
-                                    style: quicksandTextStyle,
-                                  ),
+                                  )
                                 ],
                               ),
                             ),
