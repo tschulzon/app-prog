@@ -66,12 +66,18 @@ class _DocumentsViewState extends State<DocumentsView> {
   }
 
   void applyFilters(Map<String, String> filters) async {
+    final documentProvider =
+        Provider.of<DocumentProvider>(context, listen: false);
+    final allDocuments = documentProvider.allDocuments;
+
     final filteredDocuments = await ApiService().getSolrData(
       startDate: filters['startDate'],
       endDate: filters['endDate'],
       startTime: filters['startTime'],
       endTime: filters['endTime'],
       language: filters['language'],
+      startPage: filters['startPage'],
+      endPage: filters['endPage'],
     );
 
     print("FILTERED DOCS");
@@ -80,58 +86,47 @@ class _DocumentsViewState extends State<DocumentsView> {
     final int? startPage = int.tryParse(filters['startPage'] ?? '');
     final int? endPage = int.tryParse(filters['endPage'] ?? '');
 
-    // Gruppiert Dokumente anhand ihrer Dateinamen und zählt die Gesamtanzahl der Seiten.
-    Map<String, List<Document>> documentGroups = {};
-    for (var document in filteredDocuments) {
-      final fileName = document
-          .fileName; // Nehmen wir an, `fileName` ist der Dateiname des Dokuments.
-      if (!documentGroups.containsKey(fileName)) {
-        documentGroups[fileName] = [];
-      }
-      documentGroups[fileName]!.add(document);
-    }
+    List<Document> filteredDocs = [];
 
-    List<Document> filteredList = [];
+    if ((startPage != null && startPage > 0 ||
+        endPage != null && endPage > 0)) {
+      for (var doc in filteredDocuments) {
+        int? totalpageCount =
+            int.tryParse(showTotalPageCount(doc, allDocuments));
 
-    // Überprüfen, ob Start- oder Endseite angegeben ist und Dokumente filtern.
-    if (startPage != null && startPage > 0 || endPage != null && endPage > 0) {
-      for (var entry in documentGroups.entries) {
-        List<Document> documents = entry.value;
+        print(totalpageCount);
 
-        // Zählt die Gesamtanzahl der Seiten für das Dokument anhand der Gruppenanzahl.
-        int totalPageCount = documents.length;
-
-        bool matchesPageRange = true;
-
-        // Überprüfen, ob eine Startseite angegeben wurde.
-        if (startPage != null && startPage > 0) {
-          matchesPageRange = matchesPageRange && (totalPageCount >= startPage);
-        }
-
-        // Überprüfen, ob eine Endseite angegeben wurde.
-        if (endPage != null && endPage > 0) {
-          matchesPageRange = matchesPageRange && (totalPageCount <= endPage);
-        }
-
-        // Wenn das Dokument die Bedingungen erfüllt, füge alle Vorkommen hinzu.
-        if (matchesPageRange) {
-          filteredList.addAll(documents);
+        if (totalpageCount! >= startPage! && totalpageCount <= endPage!) {
+          filteredDocs.add(doc);
         }
       }
     } else {
-      // Wenn keine Seitenzahlen angegeben sind, verwenden wir die ursprünglichen gefilterten Dokumente.
-      filteredList = filteredDocuments;
+      filteredDocs = filteredDocuments;
     }
+
     if (mounted) {
-      if (filteredList.isEmpty) {
+      if (filteredDocs.isEmpty) {
         noFilteredDocs = true;
       } else {
         noFilteredDocs = false;
       }
 
       Provider.of<DocumentProvider>(context, listen: false)
-          .applyFilters(filteredList, filters);
+          .applyFilters(filteredDocs, filters);
     }
+  }
+
+  void resetFilters() {
+    setState(() {
+      _startDate = null;
+      _endDate = null;
+      _startTime = null;
+      _endTime = null;
+      selectedLanguage = null;
+      startSelectedPages = null;
+      endSelectedPages = null;
+      activeFilter = false;
+    });
   }
 
   Future<void> searchDocuments(String searchTerm) async {
@@ -272,6 +267,15 @@ class _DocumentsViewState extends State<DocumentsView> {
     print(formattedTime);
 
     return formattedTime;
+  }
+
+  String showTotalPageCount(Document filteredDoc, List<Document> allDocuments) {
+    // Filtert alle Dokumente mit demselben Dateinamen
+    final matchingDocuments =
+        allDocuments.where((doc) => doc.fileName == filteredDoc.fileName);
+
+    // Gibt die Anzahl der gefundenen Dokumente zurück
+    return matchingDocuments.length.toString();
   }
 
   TimeOfDay selectedTime = TimeOfDay.now(); // Aktuelle Zeit initialisieren
@@ -478,10 +482,15 @@ class _DocumentsViewState extends State<DocumentsView> {
         Expanded(
           child: isLoading
               ? Center(child: CircularProgressIndicator())
-              : documents.isNotEmpty
+              : !noFilteredDocs
                   ? ListView.builder(
                       itemCount: uniqueDocuments.length,
                       itemBuilder: (context, index) {
+                        final documentProvider = Provider.of<DocumentProvider>(
+                            context,
+                            listen: false);
+                        final allDocuments = documentProvider.allDocuments;
+
                         final docInfo = uniqueDocuments[index];
                         final fileName = docInfo["fileName"] as String;
                         final pageCount = docInfo["count"] as int;
@@ -585,7 +594,8 @@ class _DocumentsViewState extends State<DocumentsView> {
                                     ),
                                   ).then((_) {
                                     searchController.clear();
-                                    loadDocuments(); // Suchleiste und Dokumente zurücksetzen
+                                    resetFilters();
+                                    loadDocuments();
                                   });
                                 },
                                 child: SizedBox(
@@ -650,7 +660,8 @@ class _DocumentsViewState extends State<DocumentsView> {
                                               Text(
                                                   'Sprache: ${exampleDoc.language}',
                                                   style: quicksandTextStyle),
-                                              Text('Seitenzahl: $pageCount',
+                                              Text(
+                                                  'Seitenzahl: ${showTotalPageCount(exampleDoc, allDocuments)}',
                                                   style: quicksandTextStyle),
                                               // Highlighted matching text snippet
                                               if (searchController

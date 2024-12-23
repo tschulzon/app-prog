@@ -48,8 +48,10 @@ class _FilterDialogState extends State<FilterDialog> {
   late int? startSelectedPages;
   late int? endSelectedPages;
 
-  late TextEditingController startPageNumberController;
-  late TextEditingController endPageNumberController;
+  late TextEditingController startPageNumberController =
+      TextEditingController(text: "");
+  late TextEditingController endPageNumberController =
+      TextEditingController(text: "");
 
   late TextEditingController startTimeController;
   late TextEditingController endTimeController;
@@ -65,7 +67,11 @@ class _FilterDialogState extends State<FilterDialog> {
     startSelectedPages = widget.initialStartPageNumber;
     endSelectedPages = widget.initialEndPageNumber;
 
-    startPageNumberController = TextEditingController(text: "");
+    startPageNumberController = TextEditingController(
+      text: widget.initialStartPageNumber != null
+          ? widget.initialStartPageNumber.toString()
+          : "",
+    );
 
     startPageNumberController.addListener(() {
       setState(() {
@@ -73,7 +79,11 @@ class _FilterDialogState extends State<FilterDialog> {
       });
     });
 
-    endPageNumberController = TextEditingController(text: "");
+    endPageNumberController = TextEditingController(
+      text: widget.initialEndPageNumber != null
+          ? widget.initialEndPageNumber.toString()
+          : "",
+    );
 
     endPageNumberController.addListener(() {
       setState(() {
@@ -118,6 +128,7 @@ class _FilterDialogState extends State<FilterDialog> {
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: ThemeData.dark().copyWith(
+            scaffoldBackgroundColor: Color(0xFF202124),
             colorScheme: ColorScheme.dark(
               primary: Color.fromARGB(219, 11, 185, 216),
               onPrimary: Colors.white,

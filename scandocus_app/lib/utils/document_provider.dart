@@ -7,7 +7,13 @@ class DocumentProvider with ChangeNotifier {
   List<Document> _filteredDocuments = [];
   Map<String, String?> _activeFilters = {};
 
-  List<Document> get documents => _documents;
+  // List<Document> get documents => _documents;
+  List<Document> get documents {
+    return _filteredDocuments.isNotEmpty ? _filteredDocuments : _documents;
+  }
+
+  List<Document> get allDocuments =>
+      _documents; // Zugriff auf die ungefilterten Dokumente
 
   // Methode: Dokumente neu laden
   Future<void> fetchDocuments() async {
@@ -17,14 +23,12 @@ class DocumentProvider with ChangeNotifier {
     // newDocuments.sort((a, b) => a.siteNumber.compareTo(b.siteNumber));
 
     _documents = newDocuments;
+    _filteredDocuments =
+        []; // Lösche die gefilterte Liste, damit sie wieder berechnet werden kann, wenn nötig
     notifyListeners(); // Benachrichtige alle Abonnenten
   }
 
   void setDocuments(List<Document> documents) {
-    // Dokumente alphabetisch sortieren, egal ob Groß oder Kleinbuchstaben
-    // documents.sort(
-    //     (a, b) => a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase()));
-    // documents.sort((a, b) => b.scanDate.compareTo(a.scanDate));
     _documents = documents;
     _filteredDocuments = []; // Filter zurücksetzen
     notifyListeners(); // Benachrichtige alle abhängigen Widgets, dass sich der Zustand geändert hat
@@ -43,7 +47,7 @@ class DocumentProvider with ChangeNotifier {
   void applyFilters(List<Document> filteredDocs, Map<String, String?> filters) {
     filteredDocs.sort(
         (a, b) => a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase()));
-    _documents = filteredDocs;
+    _filteredDocuments = filteredDocs;
     _activeFilters = filters;
     notifyListeners();
   }

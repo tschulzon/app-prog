@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:scandocus_app/main.dart';
 import 'package:scandocus_app/screens/doc_page.dart';
@@ -37,8 +38,6 @@ class _DocumentOverviewState extends State<DocumentOverview> {
   @override
   void initState() {
     super.initState();
-    // Initialisiere den Controller mit dem Standardnamen
-    // _fileNameController = TextEditingController(text: widget.session.fileName);
     // Initialisiere den Controller mit dem Dokumentnamen.
     if (widget.existingFilename != null) {
       _fileNameController =
@@ -96,23 +95,19 @@ class _DocumentOverviewState extends State<DocumentOverview> {
             );
           },
         );
-      }
 
-      try {
-        print("Session Data");
-        print(widget.session);
-        // Textdaten und Bild-URL an Solr senden
-        final apiService = ApiService();
-        for (int i = 0; i < widget.session.pages.length; i++) {
-          // Bild hochladen und Pfad erhalten
-          var page = widget.session.pages[i];
-          final imagePath = await apiService.uploadImage(File(page.imagePath));
-          String currentFilename = existingFilename ?? widget.session.fileName;
-          int currentPage =
-              existingFilename != null ? (i + 1) + newPage! : i + 1;
-          String documentTime = getTimeOfDate(page.captureDate);
-
-          if (page.scannedText.isNotEmpty) {
+        try {
+          final apiService = ApiService();
+          for (int i = 0; i < widget.session.pages.length; i++) {
+            // Bild hochladen und Pfad erhalten
+            var page = widget.session.pages[i];
+            final imagePath =
+                await apiService.uploadImage(File(page.imagePath));
+            String currentFilename =
+                existingFilename ?? widget.session.fileName;
+            int currentPage =
+                existingFilename != null ? (i + 1) + newPage! : i + 1;
+            String documentTime = getTimeOfDate(page.captureDate);
             await apiService.sendDataToServer(
               currentFilename,
               page.scannedText, // Text aus OCR
@@ -122,46 +117,43 @@ class _DocumentOverviewState extends State<DocumentOverview> {
               imageUrl: imagePath,
               pageNumber: currentPage,
             );
-          } else {
+          }
+          // Nachdem alle Daten gesendet wurden, Dialog schließen und navigieren
+          if (mounted) {
             setState(() {
               isSending = false;
             });
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Es wurden noch nicht alle Texte gescanned!'),
-                  backgroundColor: const Color.fromARGB(
-                      238, 159, 29, 29), // Wähle eine rote Farbe für Fehler
-                  duration: Duration(seconds: 3), // Dauer der Anzeige
-                ),
-              );
-            }
-            return;
+            Navigator.pop(context); // Schließt den Dialog
+          }
+        } catch (e) {
+          print('Fehler beim Speichern und Senden: $e');
+        } finally {
+          if (mounted) {
+            setState(() {
+              isSending = false;
+            });
           }
         }
-        // Nachdem alle Daten gesendet wurden, Dialog schließen und navigieren
-        if (mounted) {
-          setState(() {
-            isSending = false;
-          });
-          Navigator.pop(context); // Schließt den Dialog
-        }
-      } catch (e) {
-        print('Fehler beim Speichern und Senden: $e');
-      } finally {
-        if (mounted) {
-          setState(() {
-            isSending = false;
-          });
-        }
-      }
 
-      if (mounted && isSending == false) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
-          (Route<dynamic> route) => false,
-        );
+        if (mounted && isSending == false) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+            (Route<dynamic> route) => false,
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Es wurden noch nicht alle Texte gescanned!'),
+              backgroundColor: const Color.fromARGB(
+                  238, 159, 29, 29), // Wähle eine rote Farbe für Fehler
+              duration: Duration(seconds: 3), // Dauer der Anzeige
+            ),
+          );
+        }
+        return;
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -271,6 +263,9 @@ class _DocumentOverviewState extends State<DocumentOverview> {
               child: TextField(
                 style: quicksandTextStyleTitle,
                 controller: _fileNameController,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(20),
+                ],
                 decoration: InputDecoration(
                   labelText: "Dokumentname",
                   prefixIcon: Icon(Icons.edit,

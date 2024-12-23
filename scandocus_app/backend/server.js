@@ -180,7 +180,7 @@ app.get('/search', async (req, res) => {
     filters.push(`language:${language}`);
   }
 
-  const filterQuery = filters.length > 0 ? `&fq=${filters.join('&fq=')}` : '';
+  const filterQuery = filters.map(fq => `&fq=${encodeURIComponent(fq)}`).join('');;
   const solrQuery = query ? encodeURIComponent(query) : '*:*';
 
   try {

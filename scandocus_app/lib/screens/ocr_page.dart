@@ -281,19 +281,19 @@ class _OcrProcessViewState extends State<OcrProcessView> {
           takenPicture == null &&
           existingImage == null) {
         return Image.file(selectedImage!,
-            width: 300, height: 400, fit: BoxFit.cover);
+            width: 300, height: 400, fit: BoxFit.contain);
       } else if (takenPicture != null &&
           selectedImage == null &&
           existingImage == null) {
         return Image.file(File(takenPicture!),
-            width: 300, height: 400, fit: BoxFit.cover);
+            width: 300, height: 400, fit: BoxFit.contain);
       } else if (existingImage != null &&
           takenPicture == null &&
           selectedImage == null) {
         return Image.network(imageUrl!,
             errorBuilder: (context, error, stackTrace) {
           return const Icon(Icons.error);
-        }, width: 300, height: 400, fit: BoxFit.cover);
+        }, width: 300, height: 400, fit: BoxFit.contain);
       } else {
         return const Icon(Icons.image_not_supported);
       }
@@ -387,7 +387,22 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                     SizedBox(width: 20),
                     ElevatedButton(
                       onPressed: () {
-                        performOCR();
+                        if (selectedLanguage != "-") {
+                          performOCR();
+                        } else {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Bitte wähle eine Sprache zum Erkennen aus!'),
+                                backgroundColor: const Color.fromARGB(238, 159,
+                                    29, 29), // Wähle eine rote Farbe für Fehler
+                                duration:
+                                    Duration(seconds: 3), // Dauer der Anzeige
+                              ),
+                            );
+                          }
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(219, 11, 185, 216),
@@ -431,10 +446,9 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                             Padding(
                               padding: const EdgeInsets.all(12.0),
                               child: SelectableText(
-                                showText, // Text anzeigen
-                                textAlign: TextAlign.center,
-                                style: quicksandTextStyle,
-                              ),
+                                  showText.replaceAll('\n', ' '),
+                                  textAlign: TextAlign.center,
+                                  style: quicksandTextStyle),
                             ),
                           ],
                         ),

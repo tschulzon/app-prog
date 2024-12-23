@@ -99,7 +99,7 @@ class _LanguageListState extends State<LanguageList> {
     if (widget.activeFilter) {
       final documentProvider =
           Provider.of<DocumentProvider>(context, listen: false);
-      final fetchedDocuments = documentProvider.documents;
+      final fetchedDocuments = documentProvider.allDocuments;
 
       List<String> usedLanguages = [];
       for (var doc in fetchedDocuments) {

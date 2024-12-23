@@ -37,7 +37,7 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
   @override
   void initState() {
     super.initState();
-    searchTerm = widget.searchTerm;
+    searchTerm = widget.searchTerm ?? "";
   }
 
   @override
@@ -53,19 +53,34 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
     final matches = searchTerm.toLowerCase();
     final originalText = text.toLowerCase();
 
-    if (!originalText.contains(matches)) {
+    // if (!originalText.contains(matches)) {
+    //   return TextSpan(text: '', style: baseStyle);
+    // }
+
+    // Finde die erste Zeile, die den Suchbegriff enthält
+    final lines = text.split('\n'); // Zerlege den Text in Zeilen
+    String? matchingLine;
+    for (var line in lines) {
+      if (line.toLowerCase().contains(matches)) {
+        matchingLine = line;
+        break; // Nimm nur die erste Zeile mit dem Suchbegriff
+      }
+    }
+
+    // Wenn keine Übereinstimmung gefunden wird, gib einfach den gesamten Text zurück
+    if (matchingLine == null) {
       return TextSpan(text: '', style: baseStyle);
     }
 
-    final index = originalText.indexOf(matches);
+    final index = matchingLine.toLowerCase().indexOf(matches);
     final start = (index - 8 > 0) ? index - 8 : 0;
-    final end = (index + matches.length + 8 < text.length)
+    final end = (index + matches.length + 8 < matchingLine.length)
         ? index + matches.length + 8
-        : text.length;
+        : matchingLine.length;
 
-    final snippet = text.substring(start, end);
+    final snippet = matchingLine.substring(start, end);
 
-    // Teile den Ausschnitt in vor, Treffer, und nach dem Suchbegriff
+    //Teile den Ausschnitt in vor, Treffer, und nach dem Suchbegriff
     final snippetLower = snippet.toLowerCase();
     final matchIndex = snippetLower.indexOf(matches);
 
@@ -77,6 +92,7 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
     return TextSpan(
       children: [
         TextSpan(text: '...', style: baseStyle),
+        TextSpan(text: beforeMatch, style: baseStyle),
         TextSpan(text: beforeMatch, style: baseStyle),
         TextSpan(
           text: match,
@@ -298,6 +314,10 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                                               searchTerm!,
                                               quicksandTextStyleDocText,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow
+                                                .ellipsis, // Zeigt "..." an, wenn der Text abgeschnitten wird
+                                            textAlign: TextAlign.start,
                                           )
                                         : Text(
                                             doc.docText

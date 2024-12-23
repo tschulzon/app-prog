@@ -64,7 +64,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     initPlatformState();
 
     final now = DateTime.now();
-    final formattedDate = DateFormat('yyyy-MM-dd_HH-mm-ss').format(now);
+    final formattedDate = DateFormat('dd-MM-yy_HH-mm').format(now);
     final fileName = "Dokument_$formattedDate";
     existingFilename = widget.existingFilename;
     newPage = widget.newPage;

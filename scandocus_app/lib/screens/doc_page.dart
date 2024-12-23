@@ -184,7 +184,7 @@ class _DetailpageState extends State<Detailpage> {
                                       '$serverUrl${currentDoc.image}',
                                       width: 300,
                                       height: 400,
-                                      fit: BoxFit.cover,
+                                      fit: BoxFit.contain,
                                       errorBuilder:
                                           (context, error, stackTrace) {
                                         return const Icon(Icons.error);
