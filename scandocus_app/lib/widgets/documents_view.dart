@@ -88,8 +88,11 @@ class _DocumentsViewState extends State<DocumentsView> {
 
     List<Document> filteredDocs = [];
 
+    //check if filter has startpage and endpage values, if not take the normal filteredDocuments
     if ((startPage != null && startPage > 0 ||
         endPage != null && endPage > 0)) {
+      //Here we will check for every filteredDocument if the totalPageCount is in Between of startpage and Endpage
+      //If yes, then add it to a new filteredList,
       for (var doc in filteredDocuments) {
         int? totalpageCount =
             int.tryParse(showTotalPageCount(doc, allDocuments));

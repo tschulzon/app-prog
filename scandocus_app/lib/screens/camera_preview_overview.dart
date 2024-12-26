@@ -34,6 +34,7 @@ class _DocumentOverviewState extends State<DocumentOverview> {
   late String? existingFilename;
   late int? newPage;
   bool isSending = false;
+  bool isScanned = false;
 
   @override
   void initState() {
@@ -315,20 +316,30 @@ class _DocumentOverviewState extends State<DocumentOverview> {
                             MaterialPageRoute(
                               builder: (context) => OcrProcessView(
                                 selectedImage: File(page.imagePath),
+                                scannedText: page.scannedText,
+                                scannedLanguage: page.language,
                               ),
                             ),
                           );
 
                           if (result != null && result is Map) {
                             page.scannedText = result['scannedText'] ?? "";
-                            page.language = result['selectedLanguage'] ?? "eng";
+                            page.language = result['selectedLanguage'] ?? "-";
+                            page.isScanned = result['isScanned'] ?? false;
+                            setState(() {
+                              isScanned = true;
+                            });
                           }
                         },
                         child: ClayAnimatedContainer(
+                          parentColor: page.isScanned && page.scannedText != ""
+                              ? Colors.greenAccent
+                              : Colors.transparent,
                           depth: 13,
-                          spread: 5,
+                          spread:
+                              page.isScanned && page.scannedText != "" ? 2 : 5,
                           color: baseColor,
-                          borderRadius: 20,
+                          borderRadius: 12,
                           curveType: CurveType.none,
                           child: Stack(
                             children: [

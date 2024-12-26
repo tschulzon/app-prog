@@ -28,6 +28,8 @@ class OcrProcessView extends StatefulWidget {
   final String? existingId;
   final int? existingPage;
   final bool? replaceImage;
+  final String? scannedText;
+  final String? scannedLanguage;
 
   const OcrProcessView(
       {super.key,
@@ -38,7 +40,9 @@ class OcrProcessView extends StatefulWidget {
       this.existingFilename,
       this.existingId,
       this.existingPage,
-      this.replaceImage});
+      this.replaceImage,
+      this.scannedText,
+      this.scannedLanguage});
 
   @override
   State<OcrProcessView> createState() => _OcrProcessViewState();
@@ -52,7 +56,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
   late String? existingId;
   late int? existingPage;
   late bool? replaceImage;
-  var showText = "Hier wird Text angezeigt";
+  var showText = "";
   String selectedLanguage = "-";
 
   bool isDownloading = false;
@@ -71,6 +75,8 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     existingPage = widget.existingPage;
     existingFilename = widget.existingFilename;
     replaceImage = widget.replaceImage;
+    showText = widget.scannedText ?? "Noch kein gescannter Text.";
+    selectedLanguage = widget.scannedLanguage ?? "-";
   }
 
   Future<void> updateDocument(String image, String id, String filename,
@@ -431,7 +437,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                 ),
               ),
               Visibility(
-                visible: scanningDone,
+                visible: !isScanning,
                 child: Column(
                   children: [
                     Padding(
@@ -459,13 +465,31 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                             padding: const EdgeInsets.all(8.0),
                             child: ElevatedButton.icon(
                               onPressed: () {
-                                updateDocument(
-                                    existingImage!,
-                                    existingId!,
-                                    existingFilename!,
-                                    showText,
-                                    selectedLanguage,
-                                    existingPage!);
+                                if (showText != "Noch kein gescannter Text.") {
+                                  updateDocument(
+                                      existingImage!,
+                                      existingId!,
+                                      existingFilename!,
+                                      showText,
+                                      selectedLanguage,
+                                      existingPage!);
+                                } else {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'Bitte erst das Dokument scannen!'),
+                                        backgroundColor: const Color.fromARGB(
+                                            238,
+                                            159,
+                                            29,
+                                            29), // Wähle eine rote Farbe für Fehler
+                                        duration: Duration(
+                                            seconds: 3), // Dauer der Anzeige
+                                      ),
+                                    );
+                                  }
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
@@ -491,13 +515,32 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: ElevatedButton.icon(
                                   onPressed: () {
-                                    updateDocument(
-                                        takenPicture!,
-                                        existingId!,
-                                        existingFilename!,
-                                        showText,
-                                        selectedLanguage,
-                                        existingPage!);
+                                    if (showText !=
+                                        "Noch kein gescannter Text.") {
+                                      updateDocument(
+                                          takenPicture!,
+                                          existingId!,
+                                          existingFilename!,
+                                          showText,
+                                          selectedLanguage,
+                                          existingPage!);
+                                    } else {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Bitte erst das Dokument scannen!'),
+                                            backgroundColor: const Color
+                                                .fromARGB(238, 159, 29,
+                                                29), // Wähle eine rote Farbe für Fehler
+                                            duration: Duration(
+                                                seconds:
+                                                    3), // Dauer der Anzeige
+                                          ),
+                                        );
+                                      }
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor:
@@ -522,11 +565,30 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                 padding: const EdgeInsets.all(12.0),
                                 child: ElevatedButton.icon(
                                   onPressed: () async {
-                                    Navigator.pop(context, {
-                                      'scannedText': showText,
-                                      'selectedLanguage': selectedLanguage,
-                                    }); // Text zurückgeben
-                                    print("Verwenden Button gedrückt");
+                                    if (showText !=
+                                        "Noch kein gescannter Text.") {
+                                      Navigator.pop(context, {
+                                        'scannedText': showText,
+                                        'selectedLanguage': selectedLanguage,
+                                        'isScanned': true,
+                                      }); // Text zurückgeben
+                                    } else {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Bitte erst das Dokument scannen!'),
+                                            backgroundColor: const Color
+                                                .fromARGB(238, 159, 29,
+                                                29), // Wähle eine rote Farbe für Fehler
+                                            duration: Duration(
+                                                seconds:
+                                                    3), // Dauer der Anzeige
+                                          ),
+                                        );
+                                      }
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor:

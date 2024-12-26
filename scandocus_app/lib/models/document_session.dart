@@ -19,12 +19,14 @@ class DocumentPage {
   String captureDate;
   String language;
   int pageNumber;
+  bool isScanned;
 
   DocumentPage({
     required this.imagePath,
-    this.scannedText = "",
+    this.scannedText = "Noch kein gescannter Text.",
     required this.captureDate,
-    this.language = "eng",
+    this.language = "-",
     required this.pageNumber,
+    this.isScanned = false,
   });
 }
