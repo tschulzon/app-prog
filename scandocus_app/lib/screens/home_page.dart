@@ -1,19 +1,11 @@
 import 'package:clay_containers/widgets/clay_container.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'package:camera/camera.dart';
-import 'package:scandocus_app/screens/upload_page.dart';
 
 import '../widgets/documents_view.dart';
-import '../widgets/custom_navigation_bar.dart';
-import '../screens/ocr_page.dart';
 import '../screens/camera_page.dart';
 
 class HomePage extends StatefulWidget {
-  // final List<CameraDescription> cameras;
-
   const HomePage({super.key});
 
   @override

@@ -1,4 +1,4 @@
-import 'dart:convert';
+// ignore_for_file: depend_on_referenced_packages
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -19,9 +19,6 @@ import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class OcrProcessView extends StatefulWidget {
-  // final List<CameraDescription> cameras;
-
-  final File? selectedImage; // Ausgewähltes Bild als Datei
   final String? takenPicture;
   final String? existingImage;
   final String? existingFilename;
@@ -33,8 +30,6 @@ class OcrProcessView extends StatefulWidget {
 
   const OcrProcessView(
       {super.key,
-      this.selectedImage,
-      // required this.cameras,
       this.takenPicture,
       this.existingImage,
       this.existingFilename,
@@ -49,7 +44,6 @@ class OcrProcessView extends StatefulWidget {
 }
 
 class _OcrProcessViewState extends State<OcrProcessView> {
-  late File? selectedImage; // Ausgewähltes Bild als Datei
   late String? takenPicture;
   late String? existingFilename;
   late String? existingImage;
@@ -66,8 +60,6 @@ class _OcrProcessViewState extends State<OcrProcessView> {
   @override
   void initState() {
     super.initState();
-    selectedImage =
-        widget.selectedImage; // Das Bild aus dem Widget-Parameter setzen
 
     takenPicture = widget.takenPicture;
     existingImage = widget.existingImage;
@@ -103,21 +95,28 @@ class _OcrProcessViewState extends State<OcrProcessView> {
       id: id,
       pageNumber: page,
     );
-    print("Dokument gespeichert!");
 
+    print("Dokument gespeichert!");
     print('Daten erfolgreich an Solr gesendet.');
-    // Dokumentliste aktualisieren
-    final documentProvider =
-        Provider.of<DocumentProvider>(context, listen: false);
-    await documentProvider.fetchDocuments();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-          builder: (context) =>
-              DocumentPageOvereview(fileName: existingFilename!)),
-      (route) => route.isFirst, // Behält nur die erste Seite im Stack
-    );
-    print("Speichern Button gedrückt");
+
+    if (mounted) {
+      // Dokumentliste aktualisieren
+      final documentProvider =
+          Provider.of<DocumentProvider>(context, listen: false);
+
+      await documentProvider.fetchDocuments();
+
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  DocumentPageOvereview(fileName: existingFilename!)),
+          (route) => route.isFirst, // Behält nur die erste Seite im Stack
+        );
+      }
+      print("Speichern Button gedrückt");
+    }
   }
 
   Future<void> saveImageLocal(String imagePath) async {
@@ -185,11 +184,8 @@ class _OcrProcessViewState extends State<OcrProcessView> {
       scanningDone = false;
     });
 
-    // Überprüfen, ob `selectedImage` oder `takenPicture` nicht null sind
-    if (selectedImage != null) {
-      imagePath = selectedImage!
-          .path; // Wenn `selectedImage` nicht null ist, verwenden wir diesen Pfad
-    } else if (takenPicture != null) {
+    // Überprüfen, ob `takenPicture` nicht null sind
+    if (takenPicture != null) {
       imagePath =
           takenPicture!; // Wenn `takenPicture` nicht null ist, verwenden wir diesen Pfad
     } else if (existingImage != null) {
@@ -283,19 +279,10 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     }
 
     Widget customImageWidget() {
-      if (selectedImage != null &&
-          takenPicture == null &&
-          existingImage == null) {
-        return Image.file(selectedImage!,
-            width: 300, height: 400, fit: BoxFit.contain);
-      } else if (takenPicture != null &&
-          selectedImage == null &&
-          existingImage == null) {
+      if (takenPicture != null && existingImage == null) {
         return Image.file(File(takenPicture!),
             width: 300, height: 400, fit: BoxFit.contain);
-      } else if (existingImage != null &&
-          takenPicture == null &&
-          selectedImage == null) {
+      } else if (existingImage != null && takenPicture == null) {
         return Image.network(imageUrl!,
             errorBuilder: (context, error, stackTrace) {
           return const Icon(Icons.error);

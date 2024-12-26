@@ -1,13 +1,6 @@
-import 'package:clay_containers/clay_containers.dart';
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:path/path.dart';
 import 'package:provider/provider.dart';
-import 'package:scandocus_app/screens/camera_page.dart';
-import 'package:scandocus_app/screens/upload_page.dart';
-import 'package:scandocus_app/widgets/documents_view.dart';
 import 'screens/home_page.dart';
 import 'utils/document_provider.dart';
 

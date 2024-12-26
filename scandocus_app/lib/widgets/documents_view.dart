@@ -1,18 +1,13 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:convert';
-
 import 'package:scandocus_app/models/document.dart';
+import 'package:provider/provider.dart';
+
 import '../screens/doc_page_overview.dart';
 import '../services/api_service.dart';
 import '../widgets/filter_dialog.dart';
-
-import 'package:provider/provider.dart';
 import '../utils/document_provider.dart';
 
 class DocumentsView extends StatefulWidget {
@@ -496,7 +491,6 @@ class _DocumentsViewState extends State<DocumentsView> {
 
                         final docInfo = uniqueDocuments[index];
                         final fileName = docInfo["fileName"] as String;
-                        final pageCount = docInfo["count"] as int;
                         final exampleDoc = docInfo["exampleDoc"] as Document;
 
                         final String imageUrl =
@@ -568,11 +562,13 @@ class _DocumentsViewState extends State<DocumentsView> {
 
                                   documentProvider.removeDocument(fileName);
 
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            'Dokument "$fileName" wurde gelöscht')),
-                                  );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'Dokument "$fileName" wurde gelöscht')),
+                                    );
+                                  }
                                 }
 
                                 return confirm; // Löschen nur, wenn bestätigt

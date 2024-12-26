@@ -1,24 +1,17 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:camera/camera.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:scandocus_app/main.dart';
-import 'package:scandocus_app/screens/home_page.dart';
 
 import '../screens/ocr_page.dart';
 import '../models/document_session.dart';
 import '../screens/camera_preview_overview.dart';
-import '../screens/image_preview.dart';
 
-import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 
 // A screen that allows users to take a picture using a given camera.
 class TakePictureScreen extends StatefulWidget {
-  // final List<CameraDescription> cameras;
   final String? existingFilename;
   final int? newPage;
   final bool? replaceImage;
@@ -35,21 +28,17 @@ class TakePictureScreen extends StatefulWidget {
       this.existingPage,
       this.session});
 
-  // final CameraDescription camera;
-
   @override
   TakePictureScreenState createState() => TakePictureScreenState();
 }
 
 class TakePictureScreenState extends State<TakePictureScreen> {
   DocumentSession currentSession = DocumentSession(fileName: "Neues Dokument");
-  // DocumentScannerController? _controller;
   List<String> _pictures = [];
   String imagePath = "";
 
   bool _isLoading = false;
 
-  File? selectedImage; // Ausgewähltes Bild als Datei
   late String? existingFilename;
   late int? newPage;
   late bool replaceImage = false;
@@ -60,7 +49,6 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   void initState() {
     super.initState();
-
     initPlatformState();
 
     final now = DateTime.now();
@@ -110,7 +98,6 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             _pictures = pictures;
           }
         });
-        // imagePath = pictures[0];
 
         final now = DateTime.now();
         // Format: YYYY-MM-DDTHH:mm:ss.SSSZ
@@ -152,7 +139,6 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         print("Keine Bilder aufgenommen");
       }
     } catch (exception) {
-      // Handle exception here
       print("Fehler beim Öffnen der Kamera: $exception");
     } finally {
       setState(() {
@@ -343,7 +329,6 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         );
       }
     } catch (exception) {
-      // Handle exception here
       print("FEHLER: ");
       print(exception);
     }

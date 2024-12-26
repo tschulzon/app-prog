@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:scandocus_app/main.dart';
-import 'package:scandocus_app/screens/doc_page.dart';
 import 'package:scandocus_app/screens/ocr_page.dart';
 import 'package:scandocus_app/widgets/progress_bar.dart';
 import 'dart:io';
-
-import '../models/document.dart';
-import '../screens/camera_page.dart';
-import '../models/document_session.dart';
-import '../screens/ocr_page.dart';
-import '../services/api_service.dart';
-import '../screens/home_page.dart';
-
 import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../screens/camera_page.dart';
+import '../models/document_session.dart';
+import '../services/api_service.dart';
+import '../screens/home_page.dart';
 
 class DocumentOverview extends StatefulWidget {
   final DocumentSession session;
@@ -315,7 +310,7 @@ class _DocumentOverviewState extends State<DocumentOverview> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => OcrProcessView(
-                                selectedImage: File(page.imagePath),
+                                takenPicture: page.imagePath,
                                 scannedText: page.scannedText,
                                 scannedLanguage: page.language,
                               ),
@@ -334,7 +329,7 @@ class _DocumentOverviewState extends State<DocumentOverview> {
                         child: ClayAnimatedContainer(
                           parentColor: page.isScanned && page.scannedText != ""
                               ? Colors.greenAccent
-                              : Colors.transparent,
+                              : baseColor,
                           depth: 13,
                           spread:
                               page.isScanned && page.scannedText != "" ? 2 : 5,

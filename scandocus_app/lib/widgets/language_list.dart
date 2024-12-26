@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
@@ -5,10 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:scandocus_app/models/document.dart';
 import 'package:scandocus_app/utils/document_provider.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import '../models/lang_options.dart';
 import '../widgets/progress_bar.dart';
@@ -96,7 +96,7 @@ class _LanguageListState extends State<LanguageList> {
     // Lade heruntergeladene Sprachen
     List<String> downloaded = await getDownloadedLanguages();
 
-    if (widget.activeFilter) {
+    if (widget.activeFilter && mounted) {
       final documentProvider =
           Provider.of<DocumentProvider>(context, listen: false);
       final fetchedDocuments = documentProvider.allDocuments;
@@ -164,7 +164,7 @@ class _LanguageListState extends State<LanguageList> {
       print("in AddLanguage");
       HttpClient httpClient = HttpClient();
       HttpClientRequest request = await httpClient.getUrl(Uri.parse(
-          'https://github.com/tesseract-ocr/tessdata/raw/main/${langCode}.traineddata'));
+          'https://github.com/tesseract-ocr/tessdata/raw/main/$langCode.traineddata'));
       HttpClientResponse response = await request.close();
       Uint8List bytes = await consolidateHttpClientResponseBytes(response);
 

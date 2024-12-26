@@ -1,19 +1,13 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:scandocus_app/screens/camera_page.dart';
 import 'package:scandocus_app/screens/doc_page.dart';
-import 'dart:io';
 import 'package:provider/provider.dart';
-import 'package:scandocus_app/screens/image_preview.dart';
-import 'package:scandocus_app/screens/upload_page.dart';
 import 'package:scandocus_app/services/api_service.dart';
-import '../utils/document_provider.dart';
 import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../utils/document_provider.dart';
 import '../models/document.dart';
 
 class DocumentPageOvereview extends StatefulWidget {
@@ -31,7 +25,6 @@ class DocumentPageOvereview extends StatefulWidget {
 }
 
 class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
-  File? selectedImage;
   late String? searchTerm;
 
   @override
@@ -51,7 +44,6 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
       String text, String searchTerm, TextStyle baseStyle) {
     // Berechne den hervorgehobenen Ausschnitt
     final matches = searchTerm.toLowerCase();
-    final originalText = text.toLowerCase();
 
     // if (!originalText.contains(matches)) {
     //   return TextSpan(text: '', style: baseStyle);

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:scandocus_app/screens/upload_page.dart';
 import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/document.dart';
 import '../screens/ocr_page.dart';
-import 'package:image_picker/image_picker.dart';
-
 import '../screens/camera_page.dart';
 import '../services/api_service.dart';
 import '../utils/document_provider.dart';
@@ -125,13 +123,6 @@ class _DetailpageState extends State<Detailpage> {
   @override
   Widget build(BuildContext context) {
     Color baseColor = Color(0xFF202124);
-    final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
-      textStyle: const TextStyle(
-        color: Colors.white,
-        fontSize: 12.0,
-        fontWeight: FontWeight.w400,
-      ),
-    );
 
     final TextStyle quicksandTextStyleTitle = GoogleFonts.quicksand(
       textStyle: const TextStyle(
@@ -264,14 +255,6 @@ class BottomButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final apiService = ApiService();
-
-    final TextStyle quicksandTextStyleTitle = GoogleFonts.quicksand(
-      textStyle: const TextStyle(
-        color: Color.fromARGB(219, 11, 185, 216),
-        fontSize: 16.0,
-        fontWeight: FontWeight.w400,
-      ),
-    );
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),

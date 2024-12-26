@@ -1,20 +1,7 @@
-import 'dart:io';
-
-import 'package:clay_containers/clay_containers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-
-import 'package:scandocus_app/models/document.dart';
 import 'package:scandocus_app/widgets/language_list.dart';
-import '../screens/doc_page_overview.dart';
-import '../services/api_service.dart';
-import '../widgets/date_picker.dart';
-
-import 'package:provider/provider.dart';
-import '../utils/document_provider.dart';
 
 class FilterDialog extends StatefulWidget {
   final DateTime? initialStartDate;
@@ -217,8 +204,6 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   Widget build(BuildContext context) {
-    Color baseColor = Color(0xFF202124);
-
     final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
       textStyle: const TextStyle(
         color: Color.fromARGB(219, 11, 185, 216),
