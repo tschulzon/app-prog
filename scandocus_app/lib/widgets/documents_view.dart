@@ -10,6 +10,8 @@ import '../services/api_service.dart';
 import '../widgets/filter_dialog.dart';
 import '../utils/document_provider.dart';
 
+/// This is the [DocumentsView] Widget, which displays all documents in a list retrieved from Solr
+/// It is a stateful widget, meaning the widget can have states that change over time
 class DocumentsView extends StatefulWidget {
   const DocumentsView({super.key});
 
@@ -18,9 +20,10 @@ class DocumentsView extends StatefulWidget {
 }
 
 class _DocumentsViewState extends State<DocumentsView> {
-  // List<Document> documents = [];
+  // A flag to indicate if the documents are still loading
   bool isLoading = true;
-  // Variablen zum Speichern der Filterwerte
+
+  // Variables to save values from the filter dialog
   DateTime? _startDate;
   DateTime? _endDate;
   TimeOfDay? _startTime;
@@ -30,28 +33,38 @@ class _DocumentsViewState extends State<DocumentsView> {
   int? endSelectedPages;
   bool activeFilter = false;
   bool noFilteredDocs = false;
+
+  // Controller for the search bar, allowing the user to search by filename or specific content
   final TextEditingController searchController = TextEditingController();
 
+  // Initializes the states when the page is first rendered
   @override
   void initState() {
     super.initState();
-    loadDocuments();
+    loadDocuments(); // Load the documents when the widget is initialized
   }
 
+  // The dispose method clears all controllers when the page is closed to free up memory
   @override
   void dispose() {
-    searchController.clear(); // Text in der Suchleiste leeren
+    searchController.clear();
     super.dispose();
   }
 
+  // Method for fetching all existing documents from Solr and saving them
+  // in the Document Provider so that we can interact with the current documents
   Future<void> loadDocuments() async {
     try {
+      // Fetch documents from the Solr API
       final fetchedDocuments = await ApiService().getSolrData();
 
+      // Update the DocumentProvider with the fetched documents if the widget is still mounted
       if (mounted) {
         Provider.of<DocumentProvider>(context, listen: false)
             .setDocuments(fetchedDocuments);
       }
+
+      // Update the loading state to indicate the documents have been loaded
       setState(() {
         isLoading = false;
       });
@@ -60,11 +73,16 @@ class _DocumentsViewState extends State<DocumentsView> {
     }
   }
 
+  // Method for fetching all documents with filteroptions the user used
   void applyFilters(Map<String, String> filters) async {
     final documentProvider =
         Provider.of<DocumentProvider>(context, listen: false);
+
+    // Save all documents, regardless of the applied filters,
+    // to show the count of pages for every document
     final allDocuments = documentProvider.allDocuments;
 
+    // Fetch documents that match the filter options from the API
     final filteredDocuments = await ApiService().getSolrData(
       startDate: filters['startDate'],
       endDate: filters['endDate'],
@@ -75,33 +93,36 @@ class _DocumentsViewState extends State<DocumentsView> {
       endPage: filters['endPage'],
     );
 
-    print("FILTERED DOCS");
-    print(filteredDocuments);
-
+    // Convert the string page numbers to integers for processing
+    // In the filter dialog, the user can filter by the total page count of a document,
+    // but Solr can only search for specific page numbers. We want to filter based on the total
+    // page count, so a custom filter algorithm is applied here
     final int? startPage = int.tryParse(filters['startPage'] ?? '');
     final int? endPage = int.tryParse(filters['endPage'] ?? '');
 
     List<Document> filteredDocs = [];
 
-    //check if filter has startpage and endpage values, if not take the normal filteredDocuments
+    // Check if the start and end page values are provided. If not, just use the filtered documents
     if ((startPage != null && startPage > 0 ||
         endPage != null && endPage > 0)) {
-      //Here we will check for every filteredDocument if the totalPageCount is in Between of startpage and Endpage
-      //If yes, then add it to a new filteredList,
+      // If page filters are applied, we check each filtered document to see if its total page count
+      // is within the range of startPage and endPage. If it is, add it to the new filtered list
       for (var doc in filteredDocuments) {
+        // Get the total page count for each document with the specific function
         int? totalpageCount =
             int.tryParse(showTotalPageCount(doc, allDocuments));
 
-        print(totalpageCount);
-
+        // If the document's total page count is within the range, add it to the list
         if (totalpageCount! >= startPage! && totalpageCount <= endPage!) {
           filteredDocs.add(doc);
         }
       }
     } else {
+      // If no page range filters are provided, use the filtered documents as they are
       filteredDocs = filteredDocuments;
     }
 
+    // Update the state to show whether no documents were found after applying the filters
     if (mounted) {
       if (filteredDocs.isEmpty) {
         noFilteredDocs = true;
@@ -109,11 +130,32 @@ class _DocumentsViewState extends State<DocumentsView> {
         noFilteredDocs = false;
       }
 
+      // Set the filtered documents also in the provider
       Provider.of<DocumentProvider>(context, listen: false)
           .applyFilters(filteredDocs, filters);
     }
   }
 
+  // Method to search and display documents based on the user's search term
+  Future<void> searchDocuments(String searchTerm) async {
+    try {
+      // Add wildcards to the query to enable partial matching for the search term
+      String searchQuery = "*$searchTerm*";
+
+      // Fetch documents from the API that match the search term
+      final documents = await ApiService().searchDocuments(searchQuery);
+
+      // Set the fetched documents also in the provider
+      if (mounted) {
+        Provider.of<DocumentProvider>(context, listen: false)
+            .updateSearchedDocuments(documents);
+      }
+    } catch (e) {
+      print("Fehler bei der Suche: $e");
+    }
+  }
+
+  // Method to reset all filter values when user returns to the homepage from a subscreen
   void resetFilters() {
     setState(() {
       _startDate = null;
@@ -127,28 +169,9 @@ class _DocumentsViewState extends State<DocumentsView> {
     });
   }
 
-  Future<void> searchDocuments(String searchTerm) async {
-    try {
-      // Ergänze Wildcards zu der Suchanfrage, um die Teilwortsuche zu ermöglichen
-      String searchQuery = "*$searchTerm*";
-
-      final documents = await ApiService()
-          .searchDocuments(searchQuery); // Rufe die Ergebnisse ab
-
-      print("GEFILTERTE DOCUMENTS");
-      print(documents);
-
-      if (mounted) {
-        // Aktualisiere die Dokumente im Provider
-        Provider.of<DocumentProvider>(context, listen: false)
-            .updateSearchedDocuments(documents);
-      }
-    } catch (e) {
-      print("Fehler bei der Suche: $e");
-    }
-  }
-
+  // Method to highlight a text when searching for a specific word
   TextSpan highlightText(String text, String searchTerm) {
+    // Define the style for the text, using the Google Quicksand font
     final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
       textStyle: TextStyle(
         color: Color.fromARGB(219, 11, 185, 216),
@@ -157,64 +180,79 @@ class _DocumentsViewState extends State<DocumentsView> {
       ),
     );
 
+    // Convert both the search term and original text to lowercase for case-insensitive matching
     final matches = searchTerm.toLowerCase();
     final originalText = text.toLowerCase();
 
+    // If the original text does not contain the search term, return the text with the defined style
     if (!originalText.contains(matches)) {
       return TextSpan(text: text, style: quicksandTextStyle);
     }
 
+    // Find the index of the first occurrence of the search term in the text
     final index = originalText.indexOf(matches);
+
+    // Split the text into three parts: before the match, the matched text, and after the match
     final beforeMatch = text.substring(0, index);
     final match = text.substring(index, index + searchTerm.length);
     final afterMatch = text.substring(index + searchTerm.length);
 
+    // Return the text with highlighted match
     return TextSpan(
       children: [
+        // Text before match
         TextSpan(text: beforeMatch, style: quicksandTextStyle),
         TextSpan(
-          text: match,
+          text: match, // Highlighted matched text
           style: quicksandTextStyle.copyWith(
               backgroundColor: Color.fromARGB(255, 60, 221, 121),
               color: Color(0xFF202124),
               fontWeight: FontWeight.bold),
         ),
+        // Text after match
         TextSpan(text: afterMatch, style: quicksandTextStyle),
       ],
     );
   }
 
+  // Method to check if a text contains the search term (case-insensitive)
   bool containsSearchTerm(String text, String searchTerm) {
     return text.toLowerCase().contains(searchTerm.toLowerCase());
   }
 
+  // Method to get a snippet of the text with the search term highlighted
   TextSpan getHighlightedSnippetWithHighlight(
       String text, String searchTerm, TextStyle baseStyle) {
-    // Berechne den hervorgehobenen Ausschnitt
     final matches = searchTerm.toLowerCase();
     final originalText = text.toLowerCase();
 
+    // If the search term is not found in the text, return an empty snippet
     if (!originalText.contains(matches)) {
       return TextSpan(text: '', style: baseStyle);
     }
 
+    // Get the starting and ending index for the snippet with a buffer around the match
     final index = originalText.indexOf(matches);
-    final start = (index - 10 > 0) ? index - 10 : 0;
+    final start = (index - 10 > 0)
+        ? index - 10
+        : 0; // Start 10 characters before the match
     final end = (index + matches.length + 10 < text.length)
         ? index + matches.length + 10
-        : text.length;
+        : text.length; // End 10 characters after the match
 
+    // Get the snippet of text around the match
     final snippet = text.substring(start, end);
 
-    // Teile den Ausschnitt in vor, Treffer, und nach dem Suchbegriff
+    // Convert the snippet to lowercase for case-insensitive matching
     final snippetLower = snippet.toLowerCase();
     final matchIndex = snippetLower.indexOf(matches);
 
+    // Split the snippet into three parts: before the match, the match itself, and after the match
     final beforeMatch = snippet.substring(0, matchIndex);
     final match = snippet.substring(matchIndex, matchIndex + searchTerm.length);
     final afterMatch = snippet.substring(matchIndex + searchTerm.length);
 
-    // Erstelle ein TextSpan mit Markierung
+    // Return the snippet with the matched term highlighted and ellipses before and after
     return TextSpan(
       children: [
         TextSpan(text: '...', style: baseStyle),
@@ -232,55 +270,55 @@ class _DocumentsViewState extends State<DocumentsView> {
     );
   }
 
+  // Method to format the scan date into a standard date format (dd-MM-yyyy)
   String formatScanDate(String isoDate) {
     DateTime dateTime = DateTime.parse(isoDate);
     return DateFormat('dd-MM-yyyy').format(dateTime);
   }
 
+  // Method to format the scan time into hour and minute format (HH:mm)
   String formatScanTime(String isoDate) {
     DateTime dateTime = DateTime.parse(isoDate);
     return DateFormat('HH:mm').format(dateTime);
   }
 
+  // Method to convert a DateTime object to a string, as the scan date in Solr is stored as a string
+  // If the date is the end date, it sets the time to 23:59:59.999 to include all documents on the end date
   String convertDateToString(DateTime date, bool isEndDate) {
-    //for showing all docs from start to end, set time to 23:59:59:999
     if (isEndDate) {
       date = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
     }
-    // Formatieren des Datums in ISO 8601 (UTC-Zeit)
+
+    // Format the date to ISO 8601 format and append 'Z' to indicate UTC time, e.g., "2024-12-04T00:00:00.000Z"
     String isoFormattedDate = date.toIso8601String();
     String isoFormattedDateZ = "${isoFormattedDate}Z";
-
-    // Ausgabe: "2024-12-04T00:00:00.000Z"
-    print(isoFormattedDateZ);
 
     return isoFormattedDateZ;
   }
 
+  // Method to convert a TimeOfDay object to a string, as the scan time in Solr is stored as a string
+  // The time is formatted in the "HH:mm" format, e.g., "17:15"
   String convertTimeToString(TimeOfDay time) {
     final String formattedTime =
         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
-    // Ausgabe: "17:15" (wenn die Zeit 17:15 ist)
-    print(formattedTime);
-
     return formattedTime;
   }
 
+  // Method to get the total page count of a document based on its filename
   String showTotalPageCount(Document filteredDoc, List<Document> allDocuments) {
-    // Filtert alle Dokumente mit demselben Dateinamen
+    // Find all documents from the allDocuments list where the filename matches the filtered document's filename
     final matchingDocuments =
         allDocuments.where((doc) => doc.fileName == filteredDoc.fileName);
 
-    // Gibt die Anzahl der gefundenen Dokumente zurück
+    // Return the total count of matching documents as a string (representing the total page count)
     return matchingDocuments.length.toString();
   }
 
-  TimeOfDay selectedTime = TimeOfDay.now(); // Aktuelle Zeit initialisieren
-
+  // Building the Document View Widget
   @override
   Widget build(BuildContext context) {
-    //Fontstyling variable
+    // Define a TextStyle variable using the Quicksand font from Google Fonts
     final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
       textStyle: const TextStyle(
         color: Colors.white,
@@ -288,13 +326,21 @@ class _DocumentsViewState extends State<DocumentsView> {
         fontWeight: FontWeight.w400,
       ),
     );
-    // Zugriff auf den Provider
+
+    // Base color used for text and other elements
+    Color baseColor = Color(0xFF202124);
+
+    // Get the current list of documents from the provider
     final documentProvider = Provider.of<DocumentProvider>(context);
     final documents = documentProvider.documents;
     final apiService = ApiService();
-    Color baseColor = Color(0xFF202124);
-    // Gruppiere Dokumente nach `fileName` und zähle die Seiten
+
+    // For showing all pages with the same filename in one "document" we will group
+    // all this documents in a map
     final groupedDocuments = <String, List<Document>>{};
+
+    // Loop through every document and check if the document with this name already exists
+    // in the grouped map, if not than add it
     for (var doc in documents) {
       if (!groupedDocuments.containsKey(doc.fileName)) {
         groupedDocuments[doc.fileName] = [];
@@ -302,52 +348,51 @@ class _DocumentsViewState extends State<DocumentsView> {
       groupedDocuments[doc.fileName]!.add(doc);
     }
 
+    // Sort the documents in each group by scanDate in descending order (newest first)
     groupedDocuments.forEach((fileName, docs) {
       docs.sort((a, b) => b.scanDate.compareTo(a.scanDate));
     });
 
-    // Erstelle eine Liste aus den gruppierten Dokumenten
+    // Create a new list with the grouped documents and additional metadata (fileName, count, example document, scanDate)
     final uniqueDocuments = groupedDocuments.entries
         .map((entry) => {
               "fileName": entry.key,
               "count": entry.value.length,
-              "exampleDoc":
-                  entry.value.first, // Ein Beispiel-Dokument für Details
+              "exampleDoc": entry
+                  .value.first, // Example document to show document details
               "scanDate": entry.value.first.scanDate,
             })
         .toList();
 
+    // Sort the unique documents list by scanDate in descending order (newest first)
     uniqueDocuments.sort((a, b) {
-      // Sicherstellen, dass scanDate als String vorliegt
       String scanDateA = a['scanDate'] as String;
       String scanDateB = b['scanDate'] as String;
-
-      // Vergleichen der Strings lexikografisch
-      return scanDateB.compareTo(scanDateA); // Neueste zuerst (absteigend)
+      return scanDateB.compareTo(scanDateA);
     });
 
     return Column(
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0),
+          // ClayContainer for my used "Neomorphism" Design Style
           child: ClayContainer(
-            // emboss: true,
             depth: 13,
             spread: 5,
             color: baseColor,
             borderRadius: 50,
+            // Creating the searchbar with interactive filter icon
             child: TextField(
               style: quicksandTextStyle,
               controller: searchController,
               onChanged: (String value) async {
-                print("Suchabfrage: $value");
                 if (value.isNotEmpty) {
-                  // Rufe die Methode auf, um eine Suchanfrage zu stellen und die Ergebnisse zu aktualisieren.
                   await searchDocuments(value);
                 } else {
                   loadDocuments();
                 }
               },
+              // Style and function of the filter icon
               decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search,
                       color: Color.fromARGB(219, 11, 185, 216)),
@@ -357,7 +402,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                             ? Color.fromARGB(219, 11, 185, 216)
                             : Color.fromARGB(255, 60, 221, 121)),
                     onPressed: () async {
-                      // Zeige den Dialog an und erhalte die Rückgabewerte
+                      // Show the filter dialog as a ModalBottomSheet and save the returned values after closing it
                       final result =
                           await showModalBottomSheet<Map<String, dynamic>>(
                         context: context,
@@ -376,7 +421,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                               height: MediaQuery.of(context).size.height * 0.7,
                               color: Colors.transparent,
                               child: FilterDialog(
-                                //return current values to filterDialog
+                                // Pass current filter values to the dialog as initial values
                                 initialStartDate: _startDate,
                                 initialEndDate: _endDate,
                                 initialStartTime: _startTime,
@@ -390,9 +435,10 @@ class _DocumentsViewState extends State<DocumentsView> {
                         },
                       );
 
-                      // Verarbeite die Rückgabewerte, wenn sie nicht null sind
+                      // Handle the returned values if they are not null
                       if (result != null) {
                         setState(() {
+                          // Update filter variables based on returned values
                           if (result['startDate'] != null) {
                             _startDate = result['startDate'];
                           } else {
@@ -442,6 +488,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                           }
                         });
 
+                        // Use the returned value for fetching documents with these filter
                         applyFilters({
                           if (result['startDate'] != null)
                             'startDate':
@@ -474,31 +521,35 @@ class _DocumentsViewState extends State<DocumentsView> {
             ),
           ),
         ),
-        // Die Suchleiste
+        // Empty SizedBox as a placeholder for creating space between two widgets
         SizedBox(height: 5),
-        // Liste der Dokumente aus JSON
+        // Build a list to display documents fetched from Solr
         Expanded(
           child: isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? Center(
+                  child:
+                      CircularProgressIndicator()) // Show loading spinner while data is being fetched
               : !noFilteredDocs
                   ? ListView.builder(
-                      itemCount: uniqueDocuments.length,
+                      itemCount: uniqueDocuments
+                          .length, // Number of unique documents to display
                       itemBuilder: (context, index) {
                         final documentProvider = Provider.of<DocumentProvider>(
                             context,
                             listen: false);
+
+                        // Retrieve all documents from the provider for page filtering in the filter dialog
                         final allDocuments = documentProvider.allDocuments;
 
+                        // From the uniqueDocuments list (grouped documents), take each document and display it as a list item
                         final docInfo = uniqueDocuments[index];
                         final fileName = docInfo["fileName"] as String;
-                        final exampleDoc = docInfo["exampleDoc"] as Document;
+                        final exampleDoc = docInfo["exampleDoc"]
+                            as Document; // Get an example document for display
 
+                        // Construct the URL for the document's image
                         final String imageUrl =
-                            'http://192.168.178.193:3000${exampleDoc.image}'; // Bild-URL
-                        // final String imageUrl =
-                        //     'http://192.168.2.171:3000${exampleDoc.image}';
-                        // final String imageUrl =
-                        //     'http://192.168.178.49:3000${exampleDoc.image}';
+                            'http://192.168.178.193:3000${exampleDoc.image}';
 
                         return Padding(
                           padding: const EdgeInsets.only(
@@ -508,12 +559,13 @@ class _DocumentsViewState extends State<DocumentsView> {
                             spread: 5,
                             color: baseColor,
                             height: 150,
-                            // width: 150,
                             borderRadius: 20,
+                            // Dismissible widget allows for swiping an item to delete it
                             child: Dismissible(
                               key: Key(exampleDoc.id),
                               direction: DismissDirection.endToStart,
                               confirmDismiss: (direction) async {
+                                // Show a confirmation dialog asking the user if they are sure about deleting the document
                                 final bool confirm = await showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
@@ -529,18 +581,18 @@ class _DocumentsViewState extends State<DocumentsView> {
                                             ),
                                           )),
                                       actions: [
+                                        // Cancel Button
                                         TextButton(
                                           onPressed: () {
-                                            Navigator.of(context)
-                                                .pop(false); // Abbrechen
+                                            Navigator.of(context).pop(false);
                                           },
                                           child: Text('Abbrechen',
                                               style: GoogleFonts.quicksand()),
                                         ),
+                                        // Confirm Button
                                         TextButton(
                                           onPressed: () {
-                                            Navigator.of(context)
-                                                .pop(true); // Abbrechen
+                                            Navigator.of(context).pop(true);
                                           },
                                           child: Text('Löschen',
                                               style: GoogleFonts.quicksand(
@@ -556,12 +608,14 @@ class _DocumentsViewState extends State<DocumentsView> {
                                   },
                                 );
                                 if (confirm) {
-                                  // Dokument löschen, wenn bestätigt
+                                  // Delete document in Solr if user confirmed the dialog
                                   apiService.deleteManyDocsFromSolr(
                                       exampleDoc.fileName);
 
+                                  // Remove the document from the local document provider to update the UI
                                   documentProvider.removeDocument(fileName);
 
+                                  // Provide feedback to the user with a snackbar, confirming the document has been deleted
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -571,8 +625,9 @@ class _DocumentsViewState extends State<DocumentsView> {
                                   }
                                 }
 
-                                return confirm; // Löschen nur, wenn bestätigt
+                                return confirm;
                               },
+                              // Container widget for the "Delete-Swipe" background when the user swipes to delete
                               background: Container(
                                 color: const Color.fromARGB(255, 123, 42, 36),
                                 alignment: Alignment.centerRight,
@@ -580,8 +635,11 @@ class _DocumentsViewState extends State<DocumentsView> {
                                 child: const Icon(Icons.delete,
                                     color: Colors.white, size: 32),
                               ),
+                              // GestureDetector to handle tap on an item to navigate to the document overview screen
                               child: GestureDetector(
                                 onTap: () async {
+                                  // Navigate to the document overview page to display all pages of the document
+                                  // Passing necessary values such as the file name and the current search term
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -592,11 +650,13 @@ class _DocumentsViewState extends State<DocumentsView> {
                                       ),
                                     ),
                                   ).then((_) {
+                                    // After the user returns, reset the search controller and filters, and reload all documents
                                     searchController.clear();
                                     resetFilters();
                                     loadDocuments();
                                   });
                                 },
+                                // Create the list item UI for each document, showing the document picture and metadata
                                 child: SizedBox(
                                   height: 200,
                                   child: Row(
@@ -626,7 +686,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                                                     fit: BoxFit.cover,
                                                     errorBuilder: (context,
                                                         error, stackTrace) {
-                                                      // Wenn das Bild nicht geladen werden kann, zeige ein Icon oder eine Fehlermeldung
+                                                      // If the picture can not be loaded, then show an error icon
                                                       return const Icon(
                                                           Icons.error);
                                                     },
@@ -662,6 +722,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                                               Text(
                                                   'Seitenzahl: ${showTotalPageCount(exampleDoc, allDocuments)}',
                                                   style: quicksandTextStyle),
+
                                               // Highlighted matching text snippet
                                               if (searchController
                                                       .text.isNotEmpty &&
@@ -679,9 +740,9 @@ class _DocumentsViewState extends State<DocumentsView> {
                                                         color: Colors.white),
                                                   ),
                                                   maxLines:
-                                                      1, // Begrenze die Anzahl der Zeilen
+                                                      1, // Show only one line
                                                   overflow: TextOverflow
-                                                      .ellipsis, // Zeigt "..." an, wenn der Text abgeschnitten wird
+                                                      .ellipsis, // Show "..." if line is too long
                                                 ),
                                             ],
                                           ),
@@ -696,6 +757,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                         );
                       },
                     )
+                  // If no documents can't be shown, then show this default text
                   : Center(
                       child: Text(
                         'Keine Dokumente vorhanden.',

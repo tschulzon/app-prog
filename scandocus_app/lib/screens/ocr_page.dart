@@ -18,7 +18,26 @@ import '../services/api_service.dart';
 import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// This is the [OcrProcessView] Screen, it displays the document page image and allows
+/// the user to scan a text from the image using OCR (Optical Character Recognition) with the Tesseract package
+///
+/// Features:
+/// - Selecting a language for improved scanning accuracy
+/// - Extracting text from a document page image
+/// - Displaying the scanned text
+///
+/// This screen is implemented as a stateful widget to handle dynamic interactions and updates
 class OcrProcessView extends StatefulWidget {
+  /// Parameters:
+  /// - [takenPicture] : The current image captured with the camera.
+  /// - [existingImage] : An existing image file from storage or server.
+  /// - [existingFilename] : The filename of the document associated with the image.
+  /// - [existingId] : The unique ID of the document page.
+  /// - [existingPage] : The page number of the document.
+  /// - [replaceImage] : Indicates whether the image is being replaced.
+  /// - [scannedText] : Previously scanned text for the current document page, if available.
+  /// - [scannedLanguage] : The language used for OCR scanning
+
   final String? takenPicture;
   final String? existingImage;
   final String? existingFilename;
@@ -28,6 +47,7 @@ class OcrProcessView extends StatefulWidget {
   final String? scannedText;
   final String? scannedLanguage;
 
+  /// Constructor, which initializes optional parameters for flexibility
   const OcrProcessView(
       {super.key,
       this.takenPicture,
@@ -43,20 +63,31 @@ class OcrProcessView extends StatefulWidget {
   State<OcrProcessView> createState() => _OcrProcessViewState();
 }
 
+/// State class for the [OcrProcessView] widget.
+///
+/// Responsibilities:
+/// - Manages state and updates related to OCR processing.
+/// - Handles dynamic user interactions like scanning text and selecting languages.
+/// - Updates the current document with newly scanned data and send it to the Solr server
 class _OcrProcessViewState extends State<OcrProcessView> {
+  // Variables to store values passed from parent screen
   late String? takenPicture;
   late String? existingFilename;
   late String? existingImage;
   late String? existingId;
   late int? existingPage;
   late bool? replaceImage;
+
+  // Scanned text and language for OCR processing
   var showText = "";
   String selectedLanguage = "-";
 
+  // Flags to track download, scan, and completion states
   bool isDownloading = false;
   bool isScanning = false;
   bool scanningDone = false;
 
+  // Initialize Variables with values from the parent screen
   @override
   void initState() {
     super.initState();
@@ -71,20 +102,28 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     selectedLanguage = widget.scannedLanguage ?? "-";
   }
 
+  // Method to update a document page with new scanned text and send it to Solr server
   Future<void> updateDocument(String image, String id, String filename,
       String text, String language, int page) async {
+    // Get a new instance of the API service for server communication
     final apiService = ApiService();
+
+    // Format the current date and time for the document metadata
     final now = DateTime.now();
     final formatter = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
     final finalDate = formatter.format(now);
     final finalTime = getTimeOfDate(finalDate);
+
+    // Store the image path from captured image when uploading to server or use the existing one
     final String imagePath;
+
     if (takenPicture != null) {
       imagePath = await apiService.uploadImage(File(image));
     } else {
       imagePath = image;
     }
 
+    // Send updated document data to the Solr server
     await apiService.sendDataToServer(
       filename,
       text,
@@ -96,14 +135,10 @@ class _OcrProcessViewState extends State<OcrProcessView> {
       pageNumber: page,
     );
 
-    print("Dokument gespeichert!");
-    print('Daten erfolgreich an Solr gesendet.');
-
+    // Update the document list in the document provider and navigate back to the overview page
     if (mounted) {
-      // Dokumentliste aktualisieren
       final documentProvider =
           Provider.of<DocumentProvider>(context, listen: false);
-
       await documentProvider.fetchDocuments();
 
       if (mounted) {
@@ -112,38 +147,14 @@ class _OcrProcessViewState extends State<OcrProcessView> {
           MaterialPageRoute(
               builder: (context) =>
                   DocumentPageOvereview(fileName: existingFilename!)),
-          (route) => route.isFirst, // Behält nur die erste Seite im Stack
+          (route) =>
+              route.isFirst, // Retain the first page for navigation history
         );
       }
-      print("Speichern Button gedrückt");
     }
   }
 
-  Future<void> saveImageLocal(String imagePath) async {
-    final File imageFile = File(imagePath);
-
-    // Bild lokal speichern
-    final directory =
-        await getApplicationDocumentsDirectory(); //Pfad vom Anwenderverzeichnis holen
-    // Erstelle den Ordnerpfad
-    final folderPath = '${directory.path}/Scan2Doc';
-
-    // Überprüfe, ob der Ordner existiert, und erstelle ihn, falls nicht
-    final folder = Directory(folderPath);
-    if (!await folder.exists()) {
-      await folder.create(recursive: true); // Ordner erstellen
-      print('Ordner erstellt: $folderPath');
-    } else {
-      print('Ordner existiert bereits: $folderPath');
-    }
-
-    final fileName = 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final filePath = '$folderPath/$fileName';
-    await imageFile.copy(filePath);
-
-    print('Bild erfolgreich gespeichert: $filePath');
-  }
-
+  // Displays a modal dialog for selecting a language for OCR scanning
   void _showLanguageDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -162,6 +173,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
           child: Container(
             height: MediaQuery.of(context).size.height * 0.7,
             color: Colors.transparent,
+            // Child is the Language List widget
             child: LanguageList(
                 currentLanguage: selectedLanguage,
                 languageSelected: (newLang) {
@@ -176,44 +188,45 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     );
   }
 
-  // Methode für die OCR-Erkennung
+  // Method for OCR to extract text from the provided image
   Future<void> performOCR() async {
     String? imagePath;
+
+    // Set the flag for activated scanning processs
     setState(() {
-      isScanning = true; //activate
+      isScanning = true;
       scanningDone = false;
     });
 
-    // Überprüfen, ob `takenPicture` nicht null sind
+    // Check if taken picture with the camera is not null and set it as image path
     if (takenPicture != null) {
-      imagePath =
-          takenPicture!; // Wenn `takenPicture` nicht null ist, verwenden wir diesen Pfad
+      imagePath = takenPicture!;
     } else if (existingImage != null) {
+      // If we have an existing image then set this as image path (it has to be downloaded)
       imagePath =
           await downloadImage('http://192.168.178.193:3000${existingImage!}');
     } else {
-      print("Kein Bild zum Extrahieren vorhanden!");
       setState(() {
         showText = "Kein Bild zum Extrahieren vorhanden!";
       });
-      return; // Beenden, wenn kein Bild vorhanden ist
+      return; // Exit if no picture is available
     }
 
     try {
-      print("OCR wird ausgeführt...");
-
+      // Perform OCR using the Tesseract OCR package with provided image and language
       String extractedText = await FlutterTesseractOcr.extractText(
-        imagePath, // Pfad zum ausgewählten Bild
+        imagePath,
         language: selectedLanguage,
       );
 
-      // Aktualisiere den Status
+      // If scanning is done, set the flags and the scanned text
       setState(() {
         isScanning = false;
         scanningDone = true;
         showText = extractedText;
       });
     } catch (e) {
+      // Error handling
       setState(() {
         isScanning = false;
         scanningDone = true;
@@ -222,22 +235,23 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     }
   }
 
-  //Existierendes Bild herunterladen für Tesserect ansonsten kann es nicht nochmal gescannt werden
+  // If an image already exists, we have to download it from server for OCR processing
   Future<String> downloadImage(String url) async {
     try {
-      // Lade das Bild herunter
+      // Download the image from the url
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        // Speichere die Datei im temporären Verzeichnis
+        // Save the image in a temporary directory
         final tempDir = await getTemporaryDirectory();
         final filePath = '${tempDir.path}/downloaded_image.jpg';
         final file = File(filePath);
 
-        // Schreibe die Bilddaten in die Datei
+        // Write the image data into a file
         await file.writeAsBytes(response.bodyBytes);
 
-        return file.path; // Gibt den lokalen Pfad zurück
+        // return a local path
+        return file.path;
       } else {
         throw Exception(
             'Fehler beim Herunterladen des Bildes: ${response.statusCode}');
@@ -247,37 +261,39 @@ class _OcrProcessViewState extends State<OcrProcessView> {
     }
   }
 
-  //Get the time of the captured Date
+  // Method to extract the time from a captured date string
   String getTimeOfDate(String date) {
-    // Konvertiere den ISO-String in ein DateTime-Objekt
+    // Parse the input date string into a DateTime object
     DateTime dateTime = DateTime.parse(date);
 
-    // Extrahiere die Uhrzeit und formatiere sie als String im gewünschten Format
+    // Format the time as "HH:mm" like "17:15"
     String formattedTime =
         "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
-
-    // Gib den formatierten Zeitstring aus
-    print(formattedTime); // Ausgabe z.b.: "17:15"
 
     return formattedTime;
   }
 
+  // This build method creates the widget tree for the current screen
   @override
   Widget build(BuildContext context) {
+    // Store the image url for displaying the current document page image and
+    // set flags if image or id exists
     String? imageUrl;
     bool imageExists = false;
     bool idExists = false;
 
-    // Bedingungen prüfen und Variablen setzen
+    // If there is an existing image, set the image URL and mark the image as existing
     if (existingImage != null && existingImage!.isNotEmpty) {
-      imageUrl = 'http://192.168.178.193:3000${existingImage!}'; // Bild-URL
+      imageUrl = 'http://192.168.178.193:3000${existingImage!}';
       imageExists = true;
     }
 
+    // If the image should be replaced, mark the ID as existing
     if (replaceImage != null) {
       idExists = true;
     }
 
+    // Create a widget to display the image correctly (either as a file or a network image)
     Widget customImageWidget() {
       if (takenPicture != null && existingImage == null) {
         return Image.file(File(takenPicture!),
@@ -288,11 +304,15 @@ class _OcrProcessViewState extends State<OcrProcessView> {
           return const Icon(Icons.error);
         }, width: 300, height: 400, fit: BoxFit.contain);
       } else {
-        return const Icon(Icons.image_not_supported);
+        return const Icon(
+            Icons.image_not_supported); // Fallback icon if no image exists
       }
     }
 
+    // Base color used for text and other elements
     Color baseColor = Color(0xFF202124);
+
+    // Define various TextStyle variables using the Quicksand font from Google Fonts
     final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
       textStyle: const TextStyle(
         color: Colors.white,
@@ -311,6 +331,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
 
     return Scaffold(
       backgroundColor: baseColor,
+      // Creating an AppBar and icon customization
       appBar: AppBar(
         forceMaterialTransparency: true,
         title: Text("OCR-Verarbeitung"),
@@ -323,8 +344,9 @@ class _OcrProcessViewState extends State<OcrProcessView> {
         ),
         centerTitle: true,
         backgroundColor: baseColor,
+        // Color of back button/icon
         iconTheme: const IconThemeData(
-          color: Color.fromARGB(219, 11, 185, 216), // Farbe des Zurück-Pfeils
+          color: Color.fromARGB(219, 11, 185, 216),
         ),
       ),
       body: SingleChildScrollView(
@@ -333,12 +355,13 @@ class _OcrProcessViewState extends State<OcrProcessView> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(12.0),
+                // Displays the document page's image within a styled container
                 child: ClayContainer(
                   depth: 13,
                   spread: 5,
                   borderRadius: 20,
-                  width: 300.0, // Feste Breite
-                  height: 400.0, // Feste Höhe
+                  width: 300.0,
+                  height: 400.0,
                   color: baseColor,
                   child: Container(
                     decoration: BoxDecoration(
@@ -352,15 +375,17 @@ class _OcrProcessViewState extends State<OcrProcessView> {
               ),
               Padding(
                 padding: const EdgeInsets.all(20.0),
+                // Display two buttons in a row: one for selecting a language and another for performing OCR
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // Button for opening the language list modal
                     ElevatedButton.icon(
                       onPressed: () {
-                        print("Sprachbutton gedrückt");
                         _showLanguageDialog(context);
                       },
+                      // Customized button style
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(219, 11, 185, 216),
                         elevation: 30,
@@ -378,8 +403,10 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                           style: quicksandTextStyleButton),
                     ),
                     SizedBox(width: 20),
+                    // Button for performing OCR processing (only if a language is selected)
                     ElevatedButton(
                       onPressed: () {
+                        // Show a Snackbar message if no language is selected to inform the user
                         if (selectedLanguage != "-") {
                           performOCR();
                         } else {
@@ -388,15 +415,15 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                               SnackBar(
                                 content: Text(
                                     'Bitte wähle eine Sprache zum Erkennen aus!'),
-                                backgroundColor: const Color.fromARGB(238, 159,
-                                    29, 29), // Wähle eine rote Farbe für Fehler
-                                duration:
-                                    Duration(seconds: 3), // Dauer der Anzeige
+                                backgroundColor:
+                                    const Color.fromARGB(238, 159, 29, 29),
+                                duration: Duration(seconds: 3),
                               ),
                             );
                           }
                         }
                       },
+                      // Customized button style
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(219, 11, 185, 216),
                         elevation: 15,
@@ -408,6 +435,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                   ],
                 ),
               ),
+              // Progress bar displayed while OCR text scanning is in progress
               Visibility(
                 visible: isScanning,
                 child: Center(
@@ -423,6 +451,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                   ),
                 ),
               ),
+              // If text is no longer being scanned, display the container with the scanned text
               Visibility(
                 visible: !isScanning,
                 child: Column(
@@ -447,11 +476,13 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                         ),
                       ),
                     ),
+                    // Conditional logic for handling actions based on whether an image exists and text will be rescanned or is being replaced
                     imageExists
                         ? Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: ElevatedButton.icon(
                               onPressed: () {
+                                // Sending updated data to Solr
                                 if (showText != "Noch kein gescannter Text.") {
                                   updateDocument(
                                       existingImage!,
@@ -462,22 +493,20 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                       existingPage!);
                                 } else {
                                   if (mounted) {
+                                    // Show a Snackbar if no text is available for saving
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
                                             'Bitte erst das Dokument scannen!'),
                                         backgroundColor: const Color.fromARGB(
-                                            238,
-                                            159,
-                                            29,
-                                            29), // Wähle eine rote Farbe für Fehler
-                                        duration: Duration(
-                                            seconds: 3), // Dauer der Anzeige
+                                            238, 159, 29, 29),
+                                        duration: Duration(seconds: 3),
                                       ),
                                     );
                                   }
                                 }
                               },
+                              // Customized button style
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                     Color.fromARGB(219, 11, 185, 216),
@@ -497,11 +526,13 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                   style: quicksandTextStyleButton),
                             ),
                           )
+                        // Handling case when an image is being replaced with a new one
                         : idExists
                             ? Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: ElevatedButton.icon(
                                   onPressed: () {
+                                    // Send updated data to Solr
                                     if (showText !=
                                         "Noch kein gescannter Text.") {
                                       updateDocument(
@@ -513,22 +544,22 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                           existingPage!);
                                     } else {
                                       if (mounted) {
+                                        // Show a Snackbar if no text is available for saving
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           SnackBar(
                                             content: Text(
                                                 'Bitte erst das Dokument scannen!'),
-                                            backgroundColor: const Color
-                                                .fromARGB(238, 159, 29,
-                                                29), // Wähle eine rote Farbe für Fehler
-                                            duration: Duration(
-                                                seconds:
-                                                    3), // Dauer der Anzeige
+                                            backgroundColor:
+                                                const Color.fromARGB(
+                                                    238, 159, 29, 29),
+                                            duration: Duration(seconds: 3),
                                           ),
                                         );
                                       }
                                     }
                                   },
+                                  // Customized button style
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor:
                                         Color.fromARGB(219, 11, 185, 216),
@@ -548,6 +579,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                       style: quicksandTextStyleButton),
                                 ),
                               )
+                            // Button for using the scanned text and passing the results to the previous page
                             : Padding(
                                 padding: const EdgeInsets.all(12.0),
                                 child: ElevatedButton.icon(
@@ -558,25 +590,25 @@ class _OcrProcessViewState extends State<OcrProcessView> {
                                         'scannedText': showText,
                                         'selectedLanguage': selectedLanguage,
                                         'isScanned': true,
-                                      }); // Text zurückgeben
+                                      });
                                     } else {
                                       if (mounted) {
+                                        // Show a Snackbar if no text is available for usage
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           SnackBar(
                                             content: Text(
                                                 'Bitte erst das Dokument scannen!'),
-                                            backgroundColor: const Color
-                                                .fromARGB(238, 159, 29,
-                                                29), // Wähle eine rote Farbe für Fehler
-                                            duration: Duration(
-                                                seconds:
-                                                    3), // Dauer der Anzeige
+                                            backgroundColor:
+                                                const Color.fromARGB(
+                                                    238, 159, 29, 29),
+                                            duration: Duration(seconds: 3),
                                           ),
                                         );
                                       }
                                     }
                                   },
+                                  // Customized button style
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor:
                                         Color.fromARGB(219, 11, 185, 216),

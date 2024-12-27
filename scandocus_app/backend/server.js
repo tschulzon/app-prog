@@ -9,31 +9,26 @@ const PORT = 3000;
 
 const app = express();
 
-// Body-Parser Middleware (zum Verarbeiten von JSON)
+// Middleware for parsing JSON requests
 app.use(bodyParser.json());
-
-// Solr-URL
-const SOLR_URL = 'http://localhost:8983/solr/scan2doc/update';
-// const SOLR_URL = 'http://localhost:8983/solr/scan2doc/select?indent=true&q.op=OR&q=*%3A*&useParams=';
-
-// Middleware für JSON-Parsing
 app.use(express.json());
 
-// Zielordner für hochgeladene Bilder
+// Destination directory for uploading the taken pictures
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
-// Check, dass der Ordner existiert
+// Check if the directory exists
+// If not, create a new one
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// Speicher- und Dateinamenkonfiguration
+// Saving and filename configuration for the uploaded files
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, UPLOADS_DIR); // Zielordner
+        cb(null, UPLOADS_DIR); // Set the destination directory for uploads
     },
     filename: (req, file, cb) => {
-        // Eindeutigen Dateinamen erzeugen
+        // Create a unique filename using the current timestamp
         const uniqueName = `${Date.now()}-${file.originalname}`;
         cb(null, uniqueName);
     },
@@ -41,37 +36,37 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Endpunkt zum Hochladen von Bildern
+// Route for uploading the taken document pictures
 app.post('/upload', upload.single('image'), (req, res) => {
-    const filePath = `/uploads/${req.file.filename}`; // Relativer Pfad
+    const filePath = `/uploads/${req.file.filename}`; // // Relative path to uploaded file
     res.status(200).send({ message: 'Bild hochgeladen', filePath });
 });
 
+// Serve uploaded files from the /uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-
-// POST-Route für /api/solr
+// Route for sending documents data to Apache Solr Server
 app.post('/api/solr', async (req, res) => {
   const { fileName, images, docText, language, scanDate, siteNumber, id, scanTime } = req.body;
 
-  // Sicherheitsüberprüfung
+  // Safety check for the most important fields filename and doctext
   if (!fileName || !docText) {
       return res.status(400).json({ message: 'fileName und docText sind erforderlich!' });
   }
 
   try {
-    // Solr-Update
+    // Solr-Update for creating a new Document Object with the metadata we get from the App
     const solrResponse = await axios.post(
       'http://localhost:8983/solr/scan2doc/update?commit=true',  // Solr-Core-URL
       [
         {
-          id: id ?? `${fileName}-${Date.now()}`, // Generiere eine eindeutige ID
+          id: id ?? `${fileName}-${Date.now()}`, // Create a unique ID if no ID was given
           fileName: fileName,
           docText: docText,
-          language: language || 'unknown',  // Falls keine Sprache übergeben wurde, 'unknown' verwenden
+          language: language || 'unknown',  // Default Value is unknown
           scanDate: moment().tz('Europe/Berlin').format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z',
           scanTime: scanTime,
-          images: images, // Das Base64-kodierte Bild
+          images: images,
           siteNumber: siteNumber,
         }
       ],
@@ -95,40 +90,43 @@ app.post('/api/solr', async (req, res) => {
   }
 });
 
+// Route for updating a specific pagenumber 
 app.post('/api/updatepagenumber', async (req, res) => {
   const { id, siteNumber } = req.body;
 
-  // Sicherheitsüberprüfung
+  // Safety Check
   if (!id || !siteNumber) {
       return res.status(400).json({ message: 'id und siteNumber sind erforderlich!' });
   }
 
   try {
-    // Abrufen des bestehenden Dokuments aus Solr
+    // Getting the current documentpage with the ID from the app
     const solrResponse = await axios.get(
       `http://localhost:8983/solr/scan2doc/select?q=id:${id}&wt=json`
     );
 
-    // Überprüfen, ob das Dokument existiert
+    // Check if the page exists
     if (!solrResponse.data.response || solrResponse.data.response.numFound === 0) {
       return res.status(404).json({ message: 'Dokument nicht gefunden!' });
     }
 
+    // Here we unescape the id for the correct format in solr
     const originalId = unescapeSolrQuery(id);
 
     const existingDocument = solrResponse.data.response.docs[0];
-    console.log(existingDocument);
 
+    // Only the page number in this page will be updatet, other data will be the same
+    // like the data from the existing document
     const updatedDocument = {
       "id": originalId,
-      "siteNumber": {"set": siteNumber},  // Nur Seitenzahl wird ersetzt
+      "siteNumber": {"set": siteNumber},
       "filename": existingDocument.filename,
       "text": existingDocument.text,
       "image": existingDocument.image,
       "language": existingDocument.language,
     };
 
-    // Solr-Update
+    // Update the document in solr
     const updateResponse = await axios.post(
       'http://localhost:8983/solr/scan2doc/update?commit=true',
       [updatedDocument],
@@ -152,6 +150,7 @@ app.post('/api/updatepagenumber', async (req, res) => {
   }
 });
 
+// Method for converting the query for having a correct form to find the document in solr
 function unescapeSolrQuery(escapedQuery) {
   return escapedQuery
     .replace(/\\ /g, ' ')
@@ -161,12 +160,13 @@ function unescapeSolrQuery(escapedQuery) {
     .replace(/\\\\/g, '\\');
 }
 
-
+// Route for searching documents with used Filter information
 app.get('/search', async (req, res) => {
   const { query, start = 0, rows = 50, startDate, endDate, startTime, endTime, startPage, endPage, language } = req.query;
   
-  // Solr-Query-Filter aufbauen
+  // Save used Filteroptions for the Solr-Query-Filter
   const filters = [];
+
   if (startDate && endDate) {
     filters.push(`scanDate:[${startDate} TO ${endDate}]`);
   }
@@ -180,9 +180,11 @@ app.get('/search', async (req, res) => {
     filters.push(`language:${language}`);
   }
 
-  const filterQuery = filters.map(fq => `&fq=${encodeURIComponent(fq)}`).join('');;
+  // Build the Solr-Filter-Query based on Filteroptions in Filter-Array
+  const filterQuery = filters.map(fq => `&fq=${encodeURIComponent(fq)}`).join('');
   const solrQuery = query ? encodeURIComponent(query) : '*:*';
 
+  // Get all Documents where the filter matches
   try {
     const solrResponse = await axios.get(
       `http://localhost:8983/solr/scan2doc/select?indent=true&q=${solrQuery}${filterQuery}&start=${start}&rows=${rows}&fl=id,fileName,scanDate,scanTime,siteNumber,language,images,docText`
@@ -195,11 +197,12 @@ app.get('/search', async (req, res) => {
   }
 });
 
+// Route for getting Documents with the search term used in searchbar
+// Find documents with a specific filename or word in the scanned text
 app.get('/searchtext', async (req, res) => {
   const searchTerm = req.query.query;
 
   try {
-    // Solr-URL für die Abfrage (anpassen, je nach deiner Solr-Instanz)
     const solrResponse = await axios.get(`http://localhost:8983/solr/scan2doc/select`, {
       params: {
         q: `(fileName:${searchTerm} OR docText:${searchTerm})`,
@@ -209,7 +212,6 @@ app.get('/searchtext', async (req, res) => {
 
     console.log(solrResponse);
 
-    // Sende die Solr-Ergebnisse an Flutter zurück
     res.json(solrResponse.data.response.docs);
   } catch (error) {
     console.error('Fehler bei der Solr-Abfrage:', error);
@@ -217,19 +219,18 @@ app.get('/searchtext', async (req, res) => {
   }
 });
 
-// Route zum Löschen mehrere Dokumente mit gleichen Namen (quasi auf der Homepage)
+// Route for deleting more than one document with the same filename
+// (when user deletes a whole document on homepage)
 app.delete('/api/deleteDocsByFileName', async (req, res) => {
   const fileName = req.body.fileName;
 
-  console.log('Dokument-Filename erhalten:', fileName); // Für Debugging
-
-  // Sicherheitsüberprüfung
+  // Safety Check
   if (!fileName) {
       return res.status(400).json({ message: 'Dokumenten-Name ist erforderlich!' });
   }
 
   try {
-    // Solr-Update
+    // Solr Update for deleting all documents with the same filename
     const solrUrl = 'http://localhost:8983/solr/scan2doc/update?commit=true';
     
     const deleteQuery = {
@@ -257,22 +258,18 @@ app.delete('/api/deleteDocsByFileName', async (req, res) => {
   }
 });
 
-// Route zum Löschen mehrere Dokumente mit gleichen Namen (quasi auf der Homepage)
+// Route for deleting a single Documentpage
 app.delete('/api/deleteDocById', async (req, res) => {
   const id = req.body.id;
   const fileName = req.body.fileName;
 
-  console.log('Dokument-ID erhalten:', id); // Für Debugging
-  console.log('Dokument-Name erhalten:', fileName); // Für Debugging
-
-
-  // Sicherheitsüberprüfung
+  // Safety Check
   if (!id || !fileName) {
       return res.status(400).json({ message: 'Dokumenten-Id ist erforderlich!' });
   }
 
   try {
-    // Solr-Update
+    // Solr-Update for deleting one documentpage with the specific id
     const solrUrl = 'http://localhost:8983/solr/scan2doc/update?commit=true';
     
     const deleteQuery = {
@@ -286,19 +283,21 @@ app.delete('/api/deleteDocById', async (req, res) => {
       headers: { 'Content-Type': 'application/json' }
     });
 
-    // Hole alle Dokumente mit dem gleichen Dateinamen und sortiere nach Seitenzahl
+    // Get all the other documents with the same filename and sort it by pagenumber in ascending order
+    // because we need to update the pagenumbers from the other documentpages if one page is deleted
     const solrResponse2 = await axios.get(
       `http://localhost:8983/solr/scan2doc/select?q=fileName:"${fileName}"&sort=siteNumber asc`
     );
 
     const remainingDocs = solrResponse2.data.response.docs;
 
-    // Aktualisiere die Seitenzahlen der verbleibenden Dokumente
+    // update the pagenumbers from the other documentpages, so the order is correct again
     const updatePayload = remainingDocs.map((doc, index) => ({
       id: doc.id,
-      siteNumber: { set: index + 1 } // Setzt die Seitenzahl auf index + 1
+      siteNumber: { set: index + 1 } // change pagenumber to index + 1
     }));
 
+    // Solr Request
     await axios.post('http://localhost:8983/solr/scan2doc/update?commit=true', updatePayload, {
       headers: { 'Content-Type': 'application/json' }
     });
@@ -317,48 +316,11 @@ app.delete('/api/deleteDocById', async (req, res) => {
   }
 });
 
-
-// API-Route für Solr-Suche
-app.get('/search/filter', async (req, res) => {
-  const { query = '*:*', start = 0, rows = 50, ...filters } = req.query;
-
-  // Filter als Key-Value-Paare verarbeiten, unterstützt Ranges
-  const filterQueries = Object.entries(filters)
-    .map(([key, value]) => `${key}:${encodeURIComponent(value)}`)
-    .join(' AND ');
-
-    console.log("FILTER QUERIES:");
-    console.log(filterQueries);
-
-
-  // Kombinierte Query erstellen
-  const combinedQuery = `${query} AND ${filterQueries}`;
-
-  console.log("COMBINED QUERIES:");
-  console.log(combinedQuery);
-
-  try {
-    const solrResponse = await axios.get(
-      `http://localhost:8983/solr/scan2doc/select?indent=true&q=${encodeURIComponent(combinedQuery)}&start=${start}&rows=${rows}`
-    );
-    res.json(solrResponse.data.response);
-  } catch (error) {
-    console.error('Error querying Solr:', error);
-    res.status(500).send('Error querying Solr');
-  }
-});
-
-// Beispiel einer API-Route
-app.get('/api/test', (req, res) => {
-    res.json({ message: 'Verbindung erfolgreich!' });
-  });
-
-// Server starten
+// start the node server as a middleware for communication with apache solr server
 app.listen(PORT, () => {
     console.log(`Middleware läuft auf http://localhost:${PORT}`);
 });
 
 app.use((req, res, next) => {
-console.log(`Request Method: ${req.method}, Request URL: ${req.url}`);
 next();
 });

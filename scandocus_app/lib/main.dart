@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 import 'screens/home_page.dart';
 import 'utils/document_provider.dart';
 
+// This file is the entry point of the application.
+// It starts with the runApp() Method
 Future<void> main() async {
-  // Start der App
   runApp(
+    // This provider notifies every widget which has subscriced the provider, when a state has changed
     ChangeNotifierProvider(
       create: (context) => DocumentProvider(),
-      child: MyApp(),
+      child: MyApp(), // Entry point from the app
     ),
   );
 }
@@ -24,25 +26,24 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    // SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
-
     Color baseColor = Color(0xFF202124);
+
     return MaterialApp(
-      title: 'ScanDocus', //Name wird der App gegeben
+      title: 'Scan2Doc', // Name of the application
       theme: ThemeData(
-        //Visuelles Design wird erstellt
+        // Creating a visual standard theme
         useMaterial3: true,
+
+        // Creating a theme for the timepicker in the filter dialog
         timePickerTheme: TimePickerThemeData(
-          backgroundColor: baseColor, // Dunkler Hintergrund
-          hourMinuteTextColor: Color.fromARGB(
-              174, 11, 185, 216), // Weißer Text für Stunden und Minuten
-          dialHandColor: baseColor, // Blauer Zeiger
-          hourMinuteColor: baseColor, // Weiße Farbe für die Stunden und Minuten
+          backgroundColor: baseColor,
+          hourMinuteTextColor: Color.fromARGB(174, 11, 185, 216),
+          dialHandColor: baseColor,
+          hourMinuteColor: baseColor,
           hourMinuteShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8), // Abgerundete Ecken
-            side: BorderSide(
-                color: Color.fromARGB(174, 11, 185, 216),
-                width: 2), // Rahmenfarbe und -breite
+            borderRadius: BorderRadius.circular(8),
+            side:
+                BorderSide(color: Color.fromARGB(174, 11, 185, 216), width: 2),
           ),
           dialBackgroundColor: Color.fromARGB(174, 11, 185, 216),
           entryModeIconColor: Color.fromARGB(174, 11, 185, 216),
@@ -54,24 +55,24 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
           cancelButtonStyle: TextButton.styleFrom(
-            foregroundColor: Color.fromARGB(
-                174, 11, 185, 216), // Textfarbe für den "Cancel"-Button
+            foregroundColor: Color.fromARGB(174, 11, 185, 216),
             textStyle: TextStyle(
               fontFamily: GoogleFonts.quicksand().fontFamily,
-              fontSize: 14, // Schriftgröße für "Cancel"
+              fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
           confirmButtonStyle: TextButton.styleFrom(
-            foregroundColor: Color.fromARGB(
-                255, 60, 221, 121), // Textfarbe für den "Cancel"-Button
+            foregroundColor: Color.fromARGB(255, 60, 221, 121),
             textStyle: TextStyle(
               fontFamily: GoogleFonts.quicksand().fontFamily,
-              fontSize: 14, // Schriftgröße für "Cancel"
+              fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
+
+        // Creating a theme for the navigationbar
         navigationBarTheme: NavigationBarThemeData(
             backgroundColor: baseColor,
             indicatorColor: Color.fromARGB(219, 11, 185, 216),
@@ -89,21 +90,9 @@ class _MyAppState extends State<MyApp> {
           backgroundColor: baseColor,
         ),
       ),
+
+      // Startpage is the Homepage, where all documents, which exist in solr, will be shown
       home: HomePage(),
-    );
-  }
-}
-
-class CommutePage extends StatelessWidget {
-  const CommutePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Commute Page',
-        style: TextStyle(fontSize: 24),
-      ),
     );
   }
 }

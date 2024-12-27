@@ -10,10 +10,27 @@ import 'package:google_fonts/google_fonts.dart';
 import '../utils/document_provider.dart';
 import '../models/document.dart';
 
+/// This is the [DocumentPageOvereview] Screen, it displays all pages of a selected document when the user
+/// taps on it from the homepage. The pages are presented in a grid view, each showing:
+/// - The document image
+/// - The page number
+/// - A part of the scanned text (if available)
+///
+/// Features of this screen include:
+/// - Reordering Pages: Users can reorder pages by holding and dragging them to a new position
+/// - Navigation to Detail Page: Tapping on a page navigates the user to a detailed view
+///   where they can see the scanned text, remove the page, replace the image or scan the text again.
+///
+/// This screen is implemented as a stateful widget, meaning it can maintain and update its state
+/// over its lifecycle based on user interactions or other dynamic factors.
 class DocumentPageOvereview extends StatefulWidget {
-  final String fileName; // Name der Datei (optional)
+  /// Parameters:
+  /// - [fileName]: The name of the document being displayed
+  /// - [searchTerm] (optional): A term used to filter or highlight specific pages within the document
+  final String fileName;
   final String? searchTerm;
 
+  /// Constructor, which initializes optional parameters for flexibility
   const DocumentPageOvereview({
     super.key,
     required this.fileName,
@@ -24,55 +41,63 @@ class DocumentPageOvereview extends StatefulWidget {
   State<DocumentPageOvereview> createState() => _DocumentPageOvereviewState();
 }
 
+/// State class for the [DocumentPageOvereview] widget
+/// Handles the logic for highlighting a matching searchterm in
+/// the part of the scanned text and the reordering of the pages
 class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
+  // Variable to store the search term used for highlighting matches within the document text
   late String? searchTerm;
 
+  // Initialize Variables with values from the parent page, default is an empty string
   @override
   void initState() {
     super.initState();
     searchTerm = widget.searchTerm ?? "";
   }
 
+  /// This method is called when the widget's dependencies change
+  /// Used here to refresh the document data when the user navigates to this screen
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Dokumente beim Betreten der Seite aktualisieren
     Provider.of<DocumentProvider>(context, listen: false).fetchDocuments();
   }
 
+  // Method to get a snippet of the text with the search term highlighted
   TextSpan getHighlightedSnippetWithHighlight(
       String text, String searchTerm, TextStyle baseStyle) {
-    // Berechne den hervorgehobenen Ausschnitt
+    // Convert the search term to lowercase for a case-insensitive match
     final matches = searchTerm.toLowerCase();
 
-    // if (!originalText.contains(matches)) {
-    //   return TextSpan(text: '', style: baseStyle);
-    // }
-
-    // Finde die erste Zeile, die den Suchbegriff enthält
-    final lines = text.split('\n'); // Zerlege den Text in Zeilen
+    // Split the text into lines for processing
+    final lines = text.split('\n');
     String? matchingLine;
+
+    // Locate the first line containing the search term
     for (var line in lines) {
       if (line.toLowerCase().contains(matches)) {
         matchingLine = line;
-        break; // Nimm nur die erste Zeile mit dem Suchbegriff
+        break; // Only consider the first matching line
       }
     }
 
-    // Wenn keine Übereinstimmung gefunden wird, gib einfach den gesamten Text zurück
+    // If no match is found, return an empty TextSpan with the base style
     if (matchingLine == null) {
       return TextSpan(text: '', style: baseStyle);
     }
 
+    // Find the index of the match and calculate the snippet's range
     final index = matchingLine.toLowerCase().indexOf(matches);
-    final start = (index - 8 > 0) ? index - 8 : 0;
+    final start = (index - 8 > 0)
+        ? index - 8
+        : 0; // Include 8 characters before the match
     final end = (index + matches.length + 8 < matchingLine.length)
         ? index + matches.length + 8
-        : matchingLine.length;
+        : matchingLine.length; // Include 8 characters after the match
 
     final snippet = matchingLine.substring(start, end);
 
-    //Teile den Ausschnitt in vor, Treffer, und nach dem Suchbegriff
+    // Split the snippet into parts: before the match, the match, and after the match
     final snippetLower = snippet.toLowerCase();
     final matchIndex = snippetLower.indexOf(matches);
 
@@ -80,7 +105,7 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
     final match = snippet.substring(matchIndex, matchIndex + searchTerm.length);
     final afterMatch = snippet.substring(matchIndex + searchTerm.length);
 
-    // Erstelle ein TextSpan mit Markierung
+    // Create a TextSpan with the match highlighted
     return TextSpan(
       children: [
         TextSpan(text: '...', style: baseStyle),
@@ -99,9 +124,13 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
     );
   }
 
+  // This build method creates the widget tree for the current screen
   @override
   Widget build(BuildContext context) {
+    // Base color used for text and other elements
     Color baseColor = Color(0xFF202124);
+
+    // Define various TextStyle variables using the Quicksand font from Google Fonts
     final TextStyle quicksandTextStyleTitle = GoogleFonts.quicksand(
       textStyle: const TextStyle(
         color: Color.fromARGB(219, 11, 185, 216),
@@ -126,64 +155,74 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
       ),
     );
 
+    // Using the Consumer widget to listen for updates to the DocumentProvider and always get the latest documents
     return Consumer<DocumentProvider>(
       builder: (context, documentProvider, child) {
+        // Fetch all document pages for the specific file based on the filename passed from the homepage
         List<Document> documents =
             documentProvider.getDocumentsByFileName(widget.fileName);
-        // Sortieren der Dokumente nach `pageNumber`
-        // documents.sort((a, b) => a.siteNumber.compareTo(b.siteNumber));
+
         final numberDocuments = documents.length;
 
         return Scaffold(
           backgroundColor: baseColor,
+          // Creating an AppBar with title and icon customization
           appBar: AppBar(
             forceMaterialTransparency: true,
             title: Text(widget.fileName),
             titleTextStyle: quicksandTextStyleTitle,
             centerTitle: true,
             backgroundColor: baseColor,
+            // Color of back button/icon
             iconTheme: const IconThemeData(
-              color:
-                  Color.fromARGB(219, 11, 185, 216), // Farbe des Zurück-Pfeils
+              color: Color.fromARGB(219, 11, 185, 216),
             ),
           ),
           body: SingleChildScrollView(
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
+
+                /// Using the [ReorderableGridView] package to display documents in a grid view
+                /// where users can reorder the pages by dragging them to another position
                 child: ReorderableGridView.count(
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 20,
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 10, // Space between columns
+                  mainAxisSpacing: 20, // Space between rows
+                  crossAxisCount: 2, // 2 Columns in the grid
+                  childAspectRatio: 0.7, // Height of each grid item
+                  // Logic for handling reordering of document pages in the grid
                   onReorder: (oldIndex, newIndex) {
-                    print("in REORDER");
                     setState(() {
+                      // Remove the document from its old position and insert it at the new position
                       final movedDoc = documents.removeAt(oldIndex);
                       documents.insert(newIndex, movedDoc);
+
+                      // Update the site numbers for each document page after reordering
                       for (int i = 0; i < documents.length; i++) {
                         documents[i].siteNumber = i + 1;
                       }
 
+                      // Update the list of documents in the provider
                       documentProvider.setDocuments(documents);
 
-                      // Prüfe, ob wir nach oben oder unten verschieben
+                      // Update the page numbers in Solr if there is a reorder
+                      // based on whether the document is moved up or down
                       if (oldIndex < newIndex) {
-                        // Verschieben nach unten: Aktualisiere alle Dokumente zwischen oldIndex und newIndex (einschließlich)
+                        // Moved document to the bottom
                         for (int i = oldIndex; i <= newIndex; i++) {
                           ApiService().updatePageNumber(documents[i].id, i + 1);
                         }
                       } else {
-                        // Verschieben nach oben: Aktualisiere alle Dokumente zwischen newIndex und oldIndex (einschließlich)
+                        // Moved document to the top
                         for (int i = newIndex; i <= oldIndex; i++) {
                           ApiService().updatePageNumber(documents[i].id, i + 1);
                         }
                       }
                     });
                   },
-                  //change look from grid view item
+                  // Highlight document page with a blue border when it is being dragged
                   dragWidgetBuilder: (index, widget) {
                     return Material(
                       color: Color.fromARGB(219, 11, 185, 216),
@@ -191,6 +230,8 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                       child: widget,
                     );
                   },
+                  // The footer of the grid view contains an "Add New Document" button
+                  // which navigates to the camera page
                   footer: [
                     GestureDetector(
                       onTap: () {
@@ -218,41 +259,45 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                         ),
                       ),
                     ),
-                  ], // Hier setzen wir die Anzahl der Spalten
+                  ],
+                  // Generate grid items for each document in the list
                   children: documents.map((doc) {
+                    // Build the URL for the document's page image
                     final String imageUrl =
-                        'http://192.168.178.193:3000${doc.image}'; // Beispiel-URL
+                        'http://192.168.178.193:3000${doc.image}';
                     return GestureDetector(
-                      key: Key(doc
-                          .id), // Wichtiger Schlüssel, um das Element beim Umordnen zu identifizieren
+                      // Unique key to identify each document during reordering
+                      key: Key(doc.id),
+                      // Navigate to the document detail page when a user taps on a document item
                       onTap: () async {
-                        // Deine Logik für das Tippen auf ein Dokument
                         final updatedDocuments = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => Detailpage(
-                                document: doc, searchTerm: searchTerm),
+                                document: doc,
+                                searchTerm:
+                                    searchTerm), // Pass the search term for text highlighting
                           ),
                         );
 
-                        // Wenn Dokumente aktualisiert wurden, setze sie im Provider
+                        // If the user returns from the detail page and modified the document,
+                        // update the document list in the provider
                         if (updatedDocuments != null) {
-                          // Beispiel, aktualisiere Provider mit neuen Dokumenten
                           documentProvider.setDocuments(updatedDocuments);
                         }
                       },
+                      // Grid View Item Style
                       child: Padding(
                         padding: const EdgeInsets.all(5.0),
                         child: ClayAnimatedContainer(
                           depth: 13,
                           spread: 5,
-                          color: Color(
-                              0xFF202124), // Hier kannst du die Hintergrundfarbe festlegen
+                          color: Color(0xFF202124),
                           borderRadius: 20,
                           curveType: CurveType.none,
                           child: Column(
                             children: [
-                              // Bild anzeigen
+                              // Show document page image
                               Container(
                                 width: 200,
                                 height: 150,
@@ -283,9 +328,11 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                                             return const Icon(Icons.error);
                                           },
                                         )
-                                      : const Icon(Icons.image_not_supported),
+                                      : const Icon(Icons
+                                          .image_not_supported), // Fallback icon if image is not available
                                 ),
                               ),
+                              // Show the page number and a snippet of the document text
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Column(
@@ -293,6 +340,9 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                                     Text('Seite ${doc.siteNumber}',
                                         style: quicksandTextStyleSiteNumbers),
                                     SizedBox(height: 10),
+
+                                    // If a search term is provided and it matches part of the document text,
+                                    // display a highlighted snippet of the text
                                     searchTerm != "" &&
                                             doc.docText
                                                 .toString()
@@ -308,18 +358,18 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow
-                                                .ellipsis, // Zeigt "..." an, wenn der Text abgeschnitten wird
+                                                .ellipsis, // Shows "..." if overflowing
                                             textAlign: TextAlign.start,
                                           )
+                                        // Display normal text if no match
                                         : Text(
                                             doc.docText
                                                 .join(' ')
                                                 .replaceAll('\n', ' '),
                                             style: quicksandTextStyleDocText,
-                                            maxLines:
-                                                1, // Begrenze die Anzahl der Zeilen
+                                            maxLines: 1,
                                             overflow: TextOverflow
-                                                .ellipsis, // Zeigt "..." an, wenn der Text abgeschnitten wird
+                                                .ellipsis, // Shows "..." if overflowing
                                             textAlign: TextAlign.start,
                                           ),
                                   ],

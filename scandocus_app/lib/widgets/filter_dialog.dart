@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:scandocus_app/widgets/language_list.dart';
 
+/// This is a [FilterDialog] Widget with all filter options the user can use
+/// It is a stateful widget, meaning the widget can have states that change over time
 class FilterDialog extends StatefulWidget {
+  /// These are the initial values for the filter options, passed from the parent page
   final DateTime? initialStartDate;
   final DateTime? initialEndDate;
   final TimeOfDay? initialStartTime;
@@ -12,6 +14,7 @@ class FilterDialog extends StatefulWidget {
   final int? initialStartPageNumber;
   final int? initialEndPageNumber;
 
+  /// Constructor for the [FilterDialog], allowing initial values to be passed
   const FilterDialog(
       {super.key,
       this.initialStartDate,
@@ -27,6 +30,8 @@ class FilterDialog extends StatefulWidget {
 }
 
 class _FilterDialogState extends State<FilterDialog> {
+  /// Variables to hold the values for filter options
+  /// These values will be manipulated based on user input
   late DateTime? _startDate;
   late DateTime? _endDate;
   late TimeOfDay? startTime;
@@ -35,6 +40,7 @@ class _FilterDialogState extends State<FilterDialog> {
   late int? startSelectedPages;
   late int? endSelectedPages;
 
+  /// Controllers to handle text inputs for page numbers and time inputs
   late TextEditingController startPageNumberController =
       TextEditingController(text: "");
   late TextEditingController endPageNumberController =
@@ -43,9 +49,12 @@ class _FilterDialogState extends State<FilterDialog> {
   late TextEditingController startTimeController;
   late TextEditingController endTimeController;
 
+  /// Initializes filter options with values passed from the parent page [DocumentsView]
   @override
   void initState() {
     super.initState();
+
+    // Assign initial values for date, time, language, and page filters from the parent page
     _startDate = widget.initialStartDate;
     _endDate = widget.initialEndDate;
     startTime = widget.initialStartTime;
@@ -54,24 +63,28 @@ class _FilterDialogState extends State<FilterDialog> {
     startSelectedPages = widget.initialStartPageNumber;
     endSelectedPages = widget.initialEndPageNumber;
 
+    // Initialize the controller for start page number with the initial value
     startPageNumberController = TextEditingController(
       text: widget.initialStartPageNumber != null
           ? widget.initialStartPageNumber.toString()
           : "",
     );
 
+    // Add a listener to update 'startSelectedPages' whenever the text changes
     startPageNumberController.addListener(() {
       setState(() {
         startSelectedPages = int.tryParse(startPageNumberController.text);
       });
     });
 
+    // Initialize the controller for end page number with the initial value
     endPageNumberController = TextEditingController(
       text: widget.initialEndPageNumber != null
           ? widget.initialEndPageNumber.toString()
           : "",
     );
 
+    // Add a listener to update 'endSelectedPages' whenever the text changes
     endPageNumberController.addListener(() {
       setState(() {
         endSelectedPages = int.tryParse(endPageNumberController.text);
@@ -79,11 +92,14 @@ class _FilterDialogState extends State<FilterDialog> {
     });
   }
 
+  /// This method is called when the widget's dependencies change
+  /// It initializes the time controllers with the formatted time values
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Initialisiere die Controller in didChangeDependencies, nachdem der Kontext verfügbar ist
-    // Erstelle Controller, lasse sie leer, wenn keine Zeit gesetzt ist
+
+    // Initialize the controllers for the start and end time input field
+    // If they are not null, format it and set it as the controller's text
     startTimeController = TextEditingController(
       text: startTime != null ? startTime!.format(context) : '',
     );
@@ -92,18 +108,25 @@ class _FilterDialogState extends State<FilterDialog> {
     );
   }
 
+  /// This method is called when the widget is disposed (removed from the widget tree)
+  /// It ensures that all controllers are properly disposed to free up resources and prevent memory leaks
   @override
   void dispose() {
-    // Entsorge den Controller, um Speicherlecks zu vermeiden
     startTimeController.dispose();
     endTimeController.dispose();
     startPageNumberController.dispose();
     endPageNumberController.dispose();
+
+    // Call the 'super.dispose()' to ensure the parent class can clean up its resources
     super.dispose();
   }
 
-  /// Methode zum Öffnen des Kalenders und Aktualisieren der Felder
+  /// Method for opening the calendar input modal with the [showDateRangePicker] function of the flutter material library
+  /// This allows the user to select a date range
   Future<void> _selectDateRange(BuildContext context) async {
+    // Show the date range picker dialog
+    // If both _startDate and _endDate are set, use them as the initial date range
+    // Otherwise, no initial range is provided
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       initialDateRange: _startDate != null && _endDate != null
@@ -113,6 +136,7 @@ class _FilterDialogState extends State<FilterDialog> {
       lastDate: DateTime.now(),
       initialEntryMode: DatePickerEntryMode.calendarOnly,
       builder: (BuildContext context, Widget? child) {
+        // Customizes the appearance of the date range picker dialog
         return Theme(
           data: ThemeData.dark().copyWith(
             scaffoldBackgroundColor: Color(0xFF202124),
@@ -125,18 +149,19 @@ class _FilterDialogState extends State<FilterDialog> {
             textTheme: TextTheme(
               bodyMedium: GoogleFonts.quicksand(
                 textStyle: TextStyle(color: Colors.white, fontSize: 14),
-              ), // Schriftart für die normalen Tage
+              ),
               titleLarge: GoogleFonts.quicksand(
                 textStyle: TextStyle(color: Colors.white, fontSize: 18),
-              ), // Schriftart für den Monatstitel
+              ),
             ),
             dialogBackgroundColor: Color(0xFF202124),
           ),
-          child: child!,
+          child: child!, // The child widget (date picker) is rendered here
         );
       },
     );
 
+    // Update the start and end date with the picked ones from the modal
     if (picked != null) {
       setState(() {
         _startDate = picked.start;
@@ -145,16 +170,8 @@ class _FilterDialogState extends State<FilterDialog> {
     }
   }
 
-  String formatScanDate(String isoDate) {
-    DateTime dateTime = DateTime.parse(isoDate);
-    return DateFormat('dd-MM-yyyy').format(dateTime);
-  }
-
-  String formatScanTime(String isoDate) {
-    DateTime dateTime = DateTime.parse(isoDate);
-    return DateFormat('HH:mm').format(dateTime);
-  }
-
+  /// Method for opening the language list modal which allows the user to select a language
+  /// Only languages used in existing documents are displayed in this modal
   void _showLanguageDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -167,21 +184,25 @@ class _FilterDialogState extends State<FilterDialog> {
       ),
       builder: (BuildContext context) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.7,
+          height: MediaQuery.of(context).size.height *
+              0.7, // Takes up 70% of screen height
           color: Colors.transparent,
           child: LanguageList(
-              currentLanguage: " ",
+              currentLanguage: " ", // Default value for the current language
+              // Updates the selected language when the user selects a new one
               languageSelected: (newLang) {
                 setState(() {
                   selectedLanguage = newLang.langCode;
                 });
               },
+              // Indicates that the filter is active
               activeFilter: true),
         );
       },
     );
   }
 
+  /// Resets all filter values and controllers to their default state when the user clicks the reset button
   void resetFilters() {
     setState(() {
       _startDate = null;
@@ -192,7 +213,6 @@ class _FilterDialogState extends State<FilterDialog> {
       startSelectedPages = null;
       endSelectedPages = null;
 
-      //Reset the Controller
       startPageNumberController.text = "";
       endPageNumberController.text = "";
       startTimeController.text = "";
@@ -200,10 +220,10 @@ class _FilterDialogState extends State<FilterDialog> {
     });
   }
 
-  TimeOfDay currentTime = TimeOfDay.now(); // Aktuelle Zeit initialisieren
-
+  /// Building the filter dialog widget that provides filter options to the user
   @override
   Widget build(BuildContext context) {
+    // Define base TextStyles for consistency across the widget
     final TextStyle quicksandTextStyle = GoogleFonts.quicksand(
       textStyle: const TextStyle(
         color: Color.fromARGB(219, 11, 185, 216),
@@ -229,11 +249,11 @@ class _FilterDialogState extends State<FilterDialog> {
     );
 
     return Container(
-      width: double.infinity,
+      width: double.infinity, // Make the container as wide as its parent
       height: 600,
       padding: const EdgeInsets.all(20.0),
+      // Allow scrolling if content overflows vertically
       child: SingleChildScrollView(
-        // padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             Padding(
@@ -247,7 +267,7 @@ class _FilterDialogState extends State<FilterDialog> {
                     ),
                   )),
             ),
-            Divider(),
+            Divider(), // Add a horizontal line to separate sections
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -255,14 +275,14 @@ class _FilterDialogState extends State<FilterDialog> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text("Scan-Datum: ", style: quicksandTextStyleTitle),
-                  // FilterDatePicker(),
-                  // Eingabefelder für Start- und Enddatum
+                  // Input fields for startDate and endDate selection
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
                           readOnly: true,
                           controller: TextEditingController(
+                              // Format the start date as "dd-mm-yyyy"
                               text: _startDate != null
                                   ? "${_startDate!.day.toString().padLeft(2, '0')}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.year}"
                                   : ''),
@@ -276,11 +296,13 @@ class _FilterDialogState extends State<FilterDialog> {
                           onTap: () => _selectDateRange(context),
                         ),
                       ),
+                      // Add spacing between input fields
                       SizedBox(width: 10),
                       Expanded(
                         child: TextFormField(
                           readOnly: true,
                           controller: TextEditingController(
+                              // Format the end date as "dd-mm-yyyy"
                               text: _endDate != null
                                   ? "${_endDate!.day.toString().padLeft(2, '0')}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.year}"
                                   : ''),
@@ -296,10 +318,9 @@ class _FilterDialogState extends State<FilterDialog> {
                       ),
                     ],
                   ),
-                  // Divider(),
                   SizedBox(height: 20),
-                  // Zeigt die aktuell ausgewählte Zeit an
                   Text('Scan-Uhrzeit:', style: quicksandTextStyleTitle),
+                  // Input fields for startTime and endTime selection
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -316,15 +337,22 @@ class _FilterDialogState extends State<FilterDialog> {
                             suffixIconColor: Color.fromARGB(219, 11, 185, 216),
                           ),
                           onTap: () async {
+                            // Open the time picker dialog to select the start time
                             final TimeOfDay? pickedTime = await showTimePicker(
                               context: context,
-                              initialTime: startTime ?? TimeOfDay.now(),
+                              initialTime: startTime ??
+                                  TimeOfDay
+                                      .now(), // Default to current time if no value is set
+                              helpText: "Uhrzeit auswählen",
+                              cancelText: "Abbrechen",
+                              hourLabelText: "",
+                              minuteLabelText: "",
                             );
 
+                            // Update the state and controller if a new time is selected
                             if (pickedTime != null && pickedTime != startTime) {
                               setState(() {
                                 startTime = pickedTime;
-                                // Aktualisiere den Controller mit der neuen Zeit
                                 startTimeController.text =
                                     pickedTime.format(context);
                               });
@@ -332,7 +360,9 @@ class _FilterDialogState extends State<FilterDialog> {
                           },
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(
+                          width:
+                              10), // Add spacing between the start and end time fields
                       Expanded(
                         child: TextFormField(
                           readOnly: true,
@@ -345,19 +375,22 @@ class _FilterDialogState extends State<FilterDialog> {
                             suffixIconColor: Color.fromARGB(219, 11, 185, 216),
                           ),
                           onTap: () async {
+                            // Open a time picker dialog to select the end time
                             final TimeOfDay? pickedTime = await showTimePicker(
                               context: context,
-                              initialTime: endTime ?? TimeOfDay.now(),
+                              initialTime: endTime ??
+                                  TimeOfDay
+                                      .now(), // Default to current time if no value is set
                               helpText: "Uhrzeit auswählen",
                               cancelText: "Abbrechen",
                               hourLabelText: "",
                               minuteLabelText: "",
                             );
 
+                            // Update the state and controller if a new time is selected
                             if (pickedTime != null && pickedTime != endTime) {
                               setState(() {
                                 endTime = pickedTime;
-                                // Aktualisiere den Controller mit der neuen Zeit
                                 endTimeController.text =
                                     pickedTime.format(context);
                               });
@@ -369,13 +402,15 @@ class _FilterDialogState extends State<FilterDialog> {
                   ),
                   SizedBox(height: 20),
                   Text("Seitenzahl:", style: quicksandTextStyleTitle),
+                  // Input fields for selecting the range of page numbers (start and end)
                   Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
                           child: TextField(
-                            keyboardType: TextInputType.number,
+                            keyboardType: TextInputType
+                                .number, // Restrict input to numeric values
                             textAlign: TextAlign.center,
                             controller: startPageNumberController,
                             style: quicksandTextStyleTitle,
@@ -384,7 +419,9 @@ class _FilterDialogState extends State<FilterDialog> {
                                 labelStyle: quicksandTextStyle),
                           ),
                         ),
-                        SizedBox(width: 10),
+                        SizedBox(
+                            width:
+                                10), // Add spacing between the start and end page number fields
                         Expanded(
                           child: TextField(
                             keyboardType: TextInputType.number,
@@ -398,17 +435,21 @@ class _FilterDialogState extends State<FilterDialog> {
                         ),
                       ]),
                   SizedBox(height: 20),
+                  // Display the language selection option
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text("Sprache:", style: quicksandTextStyleTitle),
-                      SizedBox(width: 30),
+                      SizedBox(
+                          width:
+                              30), // Spacing between the label and the button
                       ElevatedButton.icon(
                         onPressed: () async {
-                          print("Sprachbutton gedrückt");
+                          // Show the language selection dialog when the button is pressed
                           _showLanguageDialog(context);
                         },
+                        // Customize button style
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color.fromARGB(219, 11, 185, 216),
                           elevation: 30,
@@ -422,7 +463,9 @@ class _FilterDialogState extends State<FilterDialog> {
                           color: Color(0xFF202124),
                           size: 25.0,
                         ),
-                        label: Text(selectedLanguage ?? "...",
+                        label: Text(
+                            selectedLanguage ??
+                                "...", // Display the selected language or a placeholder if no language is selected
                             style: quicksandTextStyleButton),
                       ),
                     ],
@@ -434,15 +477,16 @@ class _FilterDialogState extends State<FilterDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Reset Button
                 ElevatedButton(
                   onPressed: () async {
-                    print("ResetButton gedrückt");
                     resetFilters();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(238, 159, 29, 29),
                     elevation: 15,
                     padding: EdgeInsets.all(12),
+                    // Set overlay color when button is pressed
                     overlayColor: const Color.fromARGB(255, 255, 26, 133)
                         .withOpacity(0.7),
                     shape: RoundedRectangleBorder(
@@ -456,29 +500,13 @@ class _FilterDialogState extends State<FilterDialog> {
                   ),
                 ),
                 SizedBox(width: 10),
+                // Button for submitting the selected filters
                 ElevatedButton(
                   onPressed: () async {
-                    print("STARTDATUM:");
-                    print(_startDate);
-                    print("ENDDATUM:");
-                    print(_endDate);
-                    print("----------------------");
-                    print("STARTZEIT:");
-                    print(startTime);
-                    print("ENDZEIT:");
-                    print(endTime);
-                    print("----------------------");
-                    print("SPRACHE:");
-                    print(selectedLanguage);
-                    print("----------------------");
-                    print("Seitenzahl Von:");
-                    print(startSelectedPages);
-                    print("Seitenzahl Bis:");
-                    print(endSelectedPages);
-
-                    // Filter-Map dynamisch erstellen
+                    // Create map dynamically to hold the filter values
                     final filters = <String, dynamic>{};
 
+                    // Add each filter conditionally to the map if the value is not null
                     if (_startDate != null) {
                       filters['startDate'] = _startDate;
                     }
@@ -501,13 +529,16 @@ class _FilterDialogState extends State<FilterDialog> {
                       filters['endSelectedPages'] = endSelectedPages;
                     }
 
+                    // Close the filter dialog and pass the filter map back to the previous screen
                     Navigator.pop(context, filters);
                   },
+                  // Customize Submit Button
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 60, 221, 121)
                         .withOpacity(0.7),
                     elevation: 15,
                     padding: EdgeInsets.all(12),
+                    // Set overlay color when button is pressed
                     overlayColor:
                         const Color.fromARGB(255, 26, 255, 60).withOpacity(0.7),
                     shape: RoundedRectangleBorder(
