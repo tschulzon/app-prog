@@ -8,7 +8,7 @@ class ApiService {
   final String baseUrl = "http://192.168.178.193:3000";
 
   // Using Future<void> for making the Method asynchron
-  // Method für sending documents to Solr via Node Server
+  // Method for sending documents to Solr via Node Server
   Future<void> sendDataToServer(String fileName, String docText,
       {String? language,
       String? scanDate,
@@ -199,7 +199,7 @@ class ApiService {
 
   // Method to update a page number from a specific documentpage
   Future<void> updatePageNumber(String id, int pageNumber) async {
-    final url = Uri.parse('$baseUrl:3000/api/updatepagenumber');
+    final url = Uri.parse('$baseUrl/api/updatepagenumber');
 
     // escape the id for having a correct query form for solr
     final escapedId = escapeSolrQuery(id);
