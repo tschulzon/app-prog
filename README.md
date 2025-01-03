@@ -1,33 +1,41 @@
 # Scan2Doc
 
-Scan2Doc is a smartphone application to scan documents via smartphone camera and extract the text from the picture with ocr tesseract. After scanning and extracting the document page will be send and saved to Apache Solr Server via the HTTP-Server Node.JS.
+Scan2Doc is a smartphone application designed to scan documents using your smartphone camera and extract text from images using OCR (Tesseract). Scanned and processed documents are saved to an Apache Solr Server via a Node.js HTTP server.
 
 
 ## Features
 
-- **Scan documents:** Let the camera scan the document, it automatically detects the document.
-- **Edit document:** Edit your scanned document with cutting the size or use some filters like black and white or better light.
-- **Extract the text from your document:** Extract the text in every language from your document with help from OCR Tesseract. After scanning you can copy and use it.
-- **See all your documents:** See all your scanned documents with important data, saved in the database Apache Solr and delete one if needed.
-- **See all pages:** See all your scanned pages in one screen and move the site in the wished position.
-- **Edit already scanned document:** On the detailpage of a documentsite, you can scan the text again or replace the image from this site with a new one or delete it if you don't need it anymore.
-- **Filter documents:** With the filteroptions you can filter your documents after scandate, scantime, document pages and languages.
-- **Search documents:** Search your documents after filename or a special word, which can be in a scanned Text. The app will show you a part of the text with a highlighted background.
+- **Document Scanning:** Automatically detect and scan documents using your smartphone camera.
+- **Document Editing:** Adjust your scanned documents by cropping or applying filters like black-and-white or brightness enhancement.
+- **Text Extraction:** Extract text from documents in various languages using OCR (Tesseract). The extracted text can be copied and reused.
+- **Document Management:** View all scanned documents stored in the Apache Solr database, with options to delete specific documents if needed.
+- **Page Management:** View all pages of a document in a single interface, reorder them as desired, and make adjustments.
+- **Detailed Page Editing:** Rescan text, replace images, or delete individual pages directly from the document details view.
+- **Advanced Filtering:** Filter documents based on scan date, scan time, page count, and language.
+- **Search Functionality:** Search for documents by filename or keywords. Matches are displayed with highlighted text snippets.
 
 
 ## Technologies Used
 
-- **Flutter**
-- **Apache Solr Server** for saving the documents
-- **Node.JS Server** for communication with solr
+- **Flutter:** Cross-platform app development framework
+- **Apache Solr:** Powerful search and storage backend for document data
+- **Node.js:** Backend server to facilitate communication between the app and Solr
 
 ## Getting Started
 
-- Set up an Apache Solr Server on your computer and start it
-- Go into the backend folder and type "npm start" for starting node.js server
-- Install Debug Mode of the application with F5 when you have installed Flutter in your Editor or IDE
+**Prerequisites**
+1. Install and configure an Apache Solr Server on your system.
+2. Ensure Node.js is installed on your machine.
 
-Now you can use the Scan2Doc document scanner! 
+**Setup Instructions**
+1. Start the Apache Solr Server
+2. Navigate to the backend folder of the project and start the Node.js server: **npm start**
+3. Install the app in debug mode:
+   - Open the project in your preferred IDE (e.g., Visual Studio Code or Android Studio) with Flutter installed
+   - Run the app in debug mode (e.g., press F5 in VS Code)
+
+
+Now you’re ready to use Scan2Doc for efficient document scanning and management! 
 Have Fun! 📷
 
 #### Made by Juliana Kühn 🌸
