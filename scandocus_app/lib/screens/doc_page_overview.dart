@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../utils/document_provider.dart';
 import '../models/document.dart';
+import '../config.dart';
 
 /// This is the [DocumentPageOvereview] Screen, it displays all pages of a selected document when the user
 /// taps on it from the homepage. The pages are presented in a grid view, each showing:
@@ -263,8 +264,7 @@ class _DocumentPageOvereviewState extends State<DocumentPageOvereview> {
                   // Generate grid items for each document in the list
                   children: documents.map((doc) {
                     // Build the URL for the document's page image
-                    final String imageUrl =
-                        'http://192.168.178.193:3000${doc.image}';
+                    final String imageUrl = '$baseUrl${doc.image}';
                     return GestureDetector(
                       // Unique key to identify each document during reordering
                       key: Key(doc.id),

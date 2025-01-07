@@ -9,6 +9,7 @@ import '../screens/doc_page_overview.dart';
 import '../services/api_service.dart';
 import '../widgets/filter_dialog.dart';
 import '../utils/document_provider.dart';
+import '../config.dart';
 
 /// This is the [DocumentsView] Widget, which displays all documents in a list retrieved from Solr
 /// It is a stateful widget, meaning the widget can have states that change over time
@@ -572,8 +573,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                             as Document; // Get an example document for display
 
                         // Construct the URL for the document's image
-                        final String imageUrl =
-                            'http://192.168.178.193:3000${exampleDoc.image}';
+                        final String imageUrl = '$baseUrl${exampleDoc.image}';
 
                         return Padding(
                           padding: const EdgeInsets.only(

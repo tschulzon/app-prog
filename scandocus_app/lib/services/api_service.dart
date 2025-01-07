@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/document.dart';
+import '../config.dart';
 
 class ApiService {
-  //IP from a computer for testing connection from physical device
-  final String baseUrl = "http://192.168.178.193:3000";
-
   // Using Future<void> for making the Method asynchron
   // Method for sending documents to Solr via Node Server
   Future<void> sendDataToServer(String fileName, String docText,

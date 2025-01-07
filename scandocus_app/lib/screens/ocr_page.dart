@@ -14,6 +14,7 @@ import '../utils/document_provider.dart';
 import '../widgets/language_list.dart';
 import '../widgets/progress_bar.dart';
 import '../services/api_service.dart';
+import '../config.dart';
 
 import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -203,8 +204,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
       imagePath = takenPicture!;
     } else if (existingImage != null) {
       // If we have an existing image then set this as image path (it has to be downloaded)
-      imagePath =
-          await downloadImage('http://192.168.178.193:3000${existingImage!}');
+      imagePath = await downloadImage('$baseUrl${existingImage!}');
     } else {
       setState(() {
         showText = "Kein Bild zum Extrahieren vorhanden!";
@@ -284,7 +284,7 @@ class _OcrProcessViewState extends State<OcrProcessView> {
 
     // If there is an existing image, set the image URL and mark the image as existing
     if (existingImage != null && existingImage!.isNotEmpty) {
-      imageUrl = 'http://192.168.178.193:3000${existingImage!}';
+      imageUrl = '$baseUrl${existingImage!}';
       imageExists = true;
     }
 

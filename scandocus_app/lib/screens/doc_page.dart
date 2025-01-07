@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:clay_containers/clay_containers.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../models/document.dart';
 import '../screens/ocr_page.dart';
 import '../screens/camera_page.dart';
 import '../services/api_service.dart';
 import '../utils/document_provider.dart';
+import '../config.dart';
 
 /// This is the [Detailpage] Screen, it displays the document page selected by the user
 /// It provides the document page image and its scanned content
@@ -217,7 +217,7 @@ class _DetailpageState extends State<Detailpage> {
                               child: currentDoc.image.isNotEmpty
                                   // Dynamically loads the image from a network source
                                   ? Image.network(
-                                      'http://192.168.178.193:3000${currentDoc.image}',
+                                      '$baseUrl${currentDoc.image}',
                                       width: 300,
                                       height: 400,
                                       fit: BoxFit.contain,
