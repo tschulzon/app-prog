@@ -246,7 +246,7 @@ class _DetailpageState extends State<Detailpage> {
                               child: Column(
                                 children: [
                                   Text(
-                                    "Erkannter Text: ",
+                                    "Erkannter Text (${currentDoc.language}): ",
                                     style: GoogleFonts.quicksand(
                                       textStyle: TextStyle(
                                         color:

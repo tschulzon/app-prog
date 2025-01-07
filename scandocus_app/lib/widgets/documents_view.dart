@@ -315,6 +315,30 @@ class _DocumentsViewState extends State<DocumentsView> {
     return matchingDocuments.length.toString();
   }
 
+  // Method to get all languages of a document based on its filename
+  String showAllLanguages(Document filteredDoc, List<Document> allDocuments) {
+    // Find all documents from the allDocuments list where the filename matches the filtered document's filename
+    final matchingDocuments =
+        allDocuments.where((doc) => doc.fileName == filteredDoc.fileName);
+
+    // Create a list to store unique languages from matching documents
+    final documentLanguages = [];
+
+    // Loop through every document and check if the language already exists
+    // in the list, if not than add it
+    for (var doc in matchingDocuments) {
+      if (!documentLanguages.contains(doc.language)) {
+        documentLanguages.add(doc.language);
+      }
+    }
+
+    // Combine all unique languages into a single string, separated by commas
+    String languagesString = documentLanguages.join(', ');
+
+    // Return the concatenated string of languages
+    return languagesString;
+  }
+
   // Building the Document View Widget
   @override
   Widget build(BuildContext context) {
@@ -717,7 +741,7 @@ class _DocumentsViewState extends State<DocumentsView> {
                                                   'Scan-Uhrzeit: ${formatScanTime(exampleDoc.scanDate)}',
                                                   style: quicksandTextStyle),
                                               Text(
-                                                  'Sprache: ${exampleDoc.language}',
+                                                  'Sprache: ${showAllLanguages(exampleDoc, allDocuments)}',
                                                   style: quicksandTextStyle),
                                               Text(
                                                   'Seitenzahl: ${showTotalPageCount(exampleDoc, allDocuments)}',
